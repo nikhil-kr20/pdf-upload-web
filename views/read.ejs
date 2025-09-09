@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Uploaded PDFs</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .pdf-list {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      max-width: 600px;
+      margin: auto;
+    }
+    .pdf-item {
+      border: 1px solid #ddd;
+      padding: 15px;
+      border-radius: 8px;
+      background: #f9f9f9;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .pdf-item span {
+      font-size: 18px;
+      font-weight: 500;
+    }
+    .pdf-item a {
+      text-decoration: none;
+      color: white;
+      background: #007BFF;
+      padding: 8px 14px;
+      border-radius: 5px;
+      transition: 0.3s;
+    }
+    .pdf-item a:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Uploaded Files</h1>
+  <ul>
+    <% notes.forEach(note => { %>
+      <li>
+        <strong><%= note.title %></strong>
+        <button onclick="window.location.href='/view/<%= note._id %>'">View</button>
+        <button onclick="window.location.href='/download/<%= note._id %>'">Download</button>
+      </li>
+    <% }) %>
+  </ul>
+  </div>
+</body>
+</html>
