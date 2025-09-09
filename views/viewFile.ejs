@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF Viewer - <%= note.title %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+</head>
+<body class="bg-gray-100">
+
+  <!-- Top Toolbar -->
+  <div class="flex justify-between items-center p-4 bg-white shadow-md">
+    <h1 class="text-xl font-bold">Viewing: <%= note.title %></h1>
+    <a href="/download/<%= note._id %>" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      Download
+    </a>
+  </div>
+
+  <!-- Container for all PDF pages -->
+  <main class="max-w-5xl mx-auto mt-6 px-4">
+    <div id="pdf-container" class="space-y-6"></div>
+  </main>
+
+  <footer class="mt-8 text-center text-gray-500 text-sm">
+    &copy; <%= new Date().getFullYear() %> Your Website Name. All rights reserved.
+  </footer>
+
+  <script>
+    const url = '/download/<%= note._id %>'; // PDF from backend
+    const container = document.getElementById('pdf-container');
+    let scale = 1.2; // Default zoom level
+
+    // Load and render all PDF pages
+    fetch(url)
+      .then(res => res.arrayBuffer())
+      .then(data => pdfjsLib.getDocument({ data }).promise)
+      .then(pdfDoc => {
+        console.log(`Total pages: ${pdfDoc.numPages}`);
+
+        // Loop through all pages
+        for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+          renderPage(pdfDoc, pageNum);
+        }
+      })
+      .catch(err => {
+        console.error('Error loading PDF:', err);
+      });
+
+    // Function to render a single page
+    function renderPage(pdfDoc, pageNum) {
+      pdfDoc.getPage(pageNum).then(page => {
+        const viewport = page.getViewport({ scale });
+
+        // Create a canvas for this page
+        const canvas = document.createElement('canvas');
+        canvas.className = "shadow-lg bg-white rounded border border-gray-300 mx-auto block";
+        container.appendChild(canvas);
+
+        const context = canvas.getContext('2d');
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+
+        // Render the page into the canvas
+        const renderContext = { canvasContext: context, viewport };
+        page.render(renderContext);
+      });
+    }
+  </script>
+</body>
+</html>
