@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+    .btn {
+        margin-left: 20px;
+        background-color: #007bff; /* Blue */
+        color: white;
+        padding: 8px 16px;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 15px;
+    }
+
+    .btn:hover {
+        background-color: #0056b3; /* Darker blue */
+    }
+    </style>
+</head>
+<body>
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" accept=".pdf" required>
+        <button type="submit">Upload PDF</button>
+    </form>
+    <br><br>
+        <a href="/read" class="btn">View Uploaded PDFs</a>
+</body>
+</html>
