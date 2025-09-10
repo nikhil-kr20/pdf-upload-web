@@ -1,71 +1,470 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Viewer - <%= note.title %></title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
-</head>
-<body class="bg-gray-100">
-
-  <!-- Top Toolbar -->
-  <div class="flex justify-between items-center p-4 bg-white shadow-md">
-    <h1 class="text-xl font-bold">Viewing: <%= note.title %></h1>
-    <a href="/download/<%= note._id %>" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-      Download
-    </a>
-  </div>
-
-  <!-- Container for all PDF pages -->
-  <main class="max-w-5xl mx-auto mt-6 px-4">
-    <div id="pdf-container" class="space-y-6"></div>
-  </main>
-
-  <footer class="mt-8 text-center text-gray-500 text-sm">
-    &copy; <%= new Date().getFullYear() %> Your Website Name. All rights reserved.
-  </footer>
-
-  <script>
-    const url = '/download/<%= note._id %>'; // PDF from backend
-    const container = document.getElementById('pdf-container');
-    let scale = 1.2; // Default zoom level
-
-    // Load and render all PDF pages
-    fetch(url)
-      .then(res => res.arrayBuffer())
-      .then(data => pdfjsLib.getDocument({ data }).promise)
-      .then(pdfDoc => {
-        console.log(`Total pages: ${pdfDoc.numPages}`);
-
-        // Loop through all pages
-        for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
-          renderPage(pdfDoc, pageNum);
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View PDF - <%= note.title %> | Cloud Notes</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <style>
+        .pdf-viewer-container {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            padding: 100px 0 50px;
         }
-      })
-      .catch(err => {
-        console.error('Error loading PDF:', err);
-      });
+        
+        .pdf-viewer-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            margin-bottom: 2rem;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .pdf-viewer-header h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .pdf-viewer-header .pdf-icon {
+            font-size: 2rem;
+            color: #ef4444;
+        }
+        
+        .pdf-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .pdf-actions .btn {
+            padding: 0.75rem 1.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .pdf-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .pdf-pages {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            align-items: center;
+        }
+        
+        .pdf-page {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .pdf-page:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        .pdf-page canvas {
+            display: block;
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .page-number {
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0 0 12px 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e5e7eb;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 1.1rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        
+        .error-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            color: #ef4444;
+            margin-bottom: 1rem;
+        }
+        
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .error-message {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: none;
+            border-radius: 50px;
+            padding: 1rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #1e40af;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        @media (max-width: 768px) {
+            .pdf-viewer-header {
+                padding: 1.5rem;
+                margin: 0 20px 2rem;
+            }
+            
+            .pdf-viewer-header h1 {
+                font-size: 1.5rem;
+                flex-direction: column;
+                text-align: center;
+                gap: 0.5rem;
+            }
+            
+            .pdf-actions {
+                justify-content: center;
+                margin-top: 1rem;
+            }
+            
+            .back-button {
+                position: relative;
+                top: auto;
+                left: auto;
+                margin: 0 auto 2rem;
+                display: block;
+                width: fit-content;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Back Button -->
+    <button class="back-button" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i>
+        Back to Notes
+    </button>
 
-    // Function to render a single page
-    function renderPage(pdfDoc, pageNum) {
-      pdfDoc.getPage(pageNum).then(page => {
-        const viewport = page.getViewport({ scale });
+    <!-- PDF Viewer Container -->
+    <div class="pdf-viewer-container">
+        <div class="pdf-container">
+            <!-- PDF Header -->
+            <div class="pdf-viewer-header">
+                <h1>
+                    <i class="fas fa-file-pdf pdf-icon"></i>
+                    <%= note.title %>
+                </h1>
+                <div class="pdf-actions">
+                    <button class="btn btn-primary" onclick="downloadPDF()">
+                        <i class="fas fa-download"></i>
+                        Download PDF
+                    </button>
+                    <button class="btn btn-secondary" onclick="printPDF()">
+                        <i class="fas fa-print"></i>
+                        Print
+                    </button>
+                    <button class="btn btn-secondary" onclick="sharePDF()">
+                        <i class="fas fa-share"></i>
+                        Share
+                    </button>
+                </div>
+            </div>
 
-        // Create a canvas for this page
-        const canvas = document.createElement('canvas');
-        canvas.className = "shadow-lg bg-white rounded border border-gray-300 mx-auto block";
-        container.appendChild(canvas);
+            <!-- Loading State -->
+            <div id="loading" class="loading-container">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Loading PDF...</div>
+            </div>
 
-        const context = canvas.getContext('2d');
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+            <!-- Error State -->
+            <div id="error" class="error-container" style="display: none;">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="error-title">Error Loading PDF</div>
+                <div class="error-message">There was an error loading the PDF file. Please try again later.</div>
+                <button class="btn btn-primary" onclick="location.reload()">
+                    <i class="fas fa-refresh"></i>
+                    Try Again
+                </button>
+            </div>
 
-        // Render the page into the canvas
-        const renderContext = { canvasContext: context, viewport };
-        page.render(renderContext);
-      });
-    }
-  </script>
+            <!-- PDF Pages Container -->
+            <div id="pdf-pages" class="pdf-pages" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const pdfUrl = '/download/<%= note._id %>';
+        const container = document.getElementById('pdf-pages');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        let scale = 1.2; // Default zoom level
+        let pdfDoc = null;
+
+        // Load and render PDF
+        fetch(pdfUrl)
+            .then(res => {
+                if (!res.ok) {
+                    throw new Error('Failed to fetch PDF');
+                }
+                return res.arrayBuffer();
+            })
+            .then(data => pdfjsLib.getDocument({ data }).promise)
+            .then(pdf => {
+                pdfDoc = pdf;
+                console.log(`Total pages: ${pdf.numPages}`);
+                loading.style.display = 'none';
+                container.style.display = 'flex';
+                
+                // Render all pages
+                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                    renderPage(pdf, pageNum);
+                }
+            })
+            .catch(err => {
+                console.error('Error loading PDF:', err);
+                loading.style.display = 'none';
+                error.style.display = 'flex';
+            });
+
+        // Function to render a single page
+        function renderPage(pdf, pageNum) {
+            pdf.getPage(pageNum).then(page => {
+                const viewport = page.getViewport({ scale });
+                
+                // Create page container
+                const pageContainer = document.createElement('div');
+                pageContainer.className = 'pdf-page';
+                
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                // Create page number
+                const pageNumber = document.createElement('div');
+                pageNumber.className = 'page-number';
+                pageNumber.textContent = `Page ${pageNum} of ${pdf.numPages}`;
+                
+                // Assemble page
+                pageContainer.appendChild(canvas);
+                pageContainer.appendChild(pageNumber);
+                container.appendChild(pageContainer);
+                
+                // Render the page
+                const renderContext = { canvasContext: context, viewport };
+                page.render(renderContext);
+            });
+        }
+
+        // Navigation functions
+        function goBack() {
+            if (document.referrer && document.referrer.indexOf(window.location.host) !== -1) {
+                window.history.back();
+            } else {
+                window.location.href = '/read';
+            }
+        }
+
+        function downloadPDF() {
+            window.location.href = pdfUrl;
+        }
+
+        function printPDF() {
+            window.print();
+        }
+
+        function sharePDF() {
+            if (navigator.share) {
+                navigator.share({
+                    title: '<%= note.title %>',
+                    text: 'Check out this PDF from Cloud Notes',
+                    url: window.location.href
+                });
+            } else {
+                // Fallback: copy URL to clipboard
+                navigator.clipboard.writeText(window.location.href).then(() => {
+                    showNotification('Link copied to clipboard!', 'success');
+                });
+            }
+        }
+
+        // Notification function (if not already defined)
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="fas ${getNotificationIcon(type)}"></i>
+                    <span>${message}</span>
+                    <button class="notification-close" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 20px;
+                z-index: 10000;
+                background: ${getNotificationColor(type)};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 12px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                transform: translateX(400px);
+                transition: transform 0.3s ease;
+                max-width: 400px;
+                word-wrap: break-word;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.transform = 'translateX(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.transform = 'translateX(400px)';
+                    setTimeout(() => {
+                        if (notification.parentElement) {
+                            notification.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
+        }
+
+        function getNotificationIcon(type) {
+            switch (type) {
+                case 'success': return 'fa-check-circle';
+                case 'warning': return 'fa-exclamation-triangle';
+                case 'error': return 'fa-times-circle';
+                default: return 'fa-info-circle';
+            }
+        }
+
+        function getNotificationColor(type) {
+            switch (type) {
+                case 'success': return 'linear-gradient(135deg, #10b981, #34d399)';
+                case 'warning': return 'linear-gradient(135deg, #f59e0b, #fbbf24)';
+                case 'error': return 'linear-gradient(135deg, #ef4444, #f87171)';
+                default: return 'linear-gradient(135deg, #3b82f6, #60a5fa)';
+            }
+        }
+
+        // Add CSS for notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            .notification-content {
+                display: flex;
+                align-items: center;
+                gap: 0.75rem;
+            }
+            
+            .notification-close {
+                background: none;
+                border: none;
+                color: white;
+                cursor: pointer;
+                padding: 0.25rem;
+                border-radius: 4px;
+                transition: background 0.2s ease;
+            }
+            
+            .notification-close:hover {
+                background: rgba(255, 255, 255, 0.2);
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
 </body>
 </html>

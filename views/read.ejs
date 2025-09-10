@@ -1,60 +1,256 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Uploaded PDFs</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    h1 {
-      text-align: center;
-      color: #333;
-    }
-    .pdf-list {
-      display: flex;
-      flex-direction: column;
-      gap: 15px;
-      max-width: 600px;
-      margin: auto;
-    }
-    .pdf-item {
-      border: 1px solid #ddd;
-      padding: 15px;
-      border-radius: 8px;
-      background: #f9f9f9;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .pdf-item span {
-      font-size: 18px;
-      font-weight: 500;
-    }
-    .pdf-item a {
-      text-decoration: none;
-      color: white;
-      background: #007BFF;
-      padding: 8px 14px;
-      border-radius: 5px;
-      transition: 0.3s;
-    }
-    .pdf-item a:hover {
-      background: #0056b3;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browse Notes - Cloud Notes</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-  <h1>Uploaded Files</h1>
-  <ul>
-    <% notes.forEach(note => { %>
-      <li>
-        <strong><%= note.title %></strong>
-        <button onclick="window.location.href='/view/<%= note._id %>'">View</button>
-        <button onclick="window.location.href='/download/<%= note._id %>'">Download</button>
-      </li>
-    <% }) %>
-  </ul>
-  </div>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 19.5C4 18.1193 5.11929 17 6.5 17H20" stroke="black" stroke-width="1.5" fill="white"/>
+                        <path d="M6.5 2H20V22H6.5C5.11929 22 4 20.8807 4 19.5V2C4 0.619288 5.11929 0 6.5 0Z" stroke="black" stroke-width="1.5" fill="white"/>
+                        <path d="M6.5 0H4C2.89543 0 2 0.895431 2 2V19.5C2 20.8807 2.89543 22 4 22H6.5" stroke="black" stroke-width="1.5" fill="none"/>
+                        <line x1="9" y1="6" x2="15" y2="6" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                        <line x1="9" y1="9" x2="15" y2="9" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                        <line x1="9" y1="12" x2="13" y2="12" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-primary">Cloud</span>
+                    <span class="logo-secondary">Notes</span>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="/" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/#upload" class="nav-link">Upload</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/read" class="nav-link active">Browse</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/#about" class="nav-link">About</a>
+                </li>
+            </ul>
+            <div class="nav-auth">
+                <button class="btn-auth btn-signin">Sign In</button>
+                <button class="btn-auth btn-signup">Sign Up</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- PDF List Section -->
+    <section class="pdf-list-section">
+        <div class="pdf-list-container">
+            <div class="pdf-list-header">
+                <h1>Browse Academic Notes</h1>
+                <p>Discover and access notes shared by students worldwide</p>
+            </div>
+            
+            <% if (notes && notes.length > 0) { %>
+                <div class="pdf-grid">
+                    <% notes.forEach(note => { %>
+                        <div class="pdf-card">
+                            <div class="pdf-icon">
+                                <i class="fas fa-file-pdf"></i>
+                            </div>
+                            <h3><%= note.title %></h3>
+                            <div class="pdf-meta">
+                                <span class="pdf-type">
+                                    <i class="fas fa-file"></i>
+                                    PDF Document
+                                </span>
+                                <span class="pdf-date">
+                                    <i class="fas fa-calendar"></i>
+                                    <%= new Date(note._id.getTimestamp()).toLocaleDateString() %>
+                                </span>
+                            </div>
+                            <div class="pdf-actions">
+                                <button class="btn btn-primary" onclick="viewPDF('<%= note._id %>')">
+                                    <i class="fas fa-eye"></i>
+                                    View
+                                </button>
+                                <button class="btn btn-secondary" onclick="downloadPDF('<%= note._id %>')">
+                                    <i class="fas fa-download"></i>
+                                    Download
+                                </button>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h3>No Notes Available</h3>
+                    <p>Be the first to share your academic notes with the community!</p>
+                    <a href="/" class="btn btn-primary">
+                        <i class="fas fa-upload"></i>
+                        Upload Notes
+                    </a>
+                </div>
+            <% } %>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Cloud Notes. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="/script.js"></script>
+    <script>
+        // Modal PDF viewer on this page
+        function viewPDF(id) {
+            const container = document.createElement('div');
+            container.style.minHeight = '70vh';
+            container.style.maxHeight = '100%';
+            container.style.overflow = 'auto';
+
+            // Placeholder while loading
+            const loading = document.createElement('div');
+            loading.style.cssText = 'padding:16px; text-align:center; color:#6b7280;';
+            loading.textContent = 'Loading PDF...';
+            container.appendChild(loading);
+
+            showModal('Preview', container, [
+                { label: 'Close', variant: 'primary' },
+                { label: 'Open Full Page', variant: 'secondary', onClick: () => window.location.href = `/view/${id}` }
+            ]);
+
+            const url = `/download/${id}`;
+            fetch(url)
+                .then(res => res.arrayBuffer())
+                .then(data => pdfjsLib.getDocument({ data }).promise)
+                .then(pdf => {
+                    container.innerHTML = '';
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        pdf.getPage(pageNum).then(page => {
+                            // Fit width to modal: compute scale based on desired width
+                            const desiredWidth = Math.min(1100, window.innerWidth * 0.9 - 80); // padding accounted
+                            const unscaledViewport = page.getViewport({ scale: 1 });
+                            const scale = desiredWidth / unscaledViewport.width;
+                            const viewport = page.getViewport({ scale });
+                            const canvas = document.createElement('canvas');
+                            canvas.style.display = 'block';
+                            canvas.style.margin = '0 auto 16px';
+                            canvas.style.maxWidth = '100%';
+                            canvas.style.height = 'auto';
+                            const context = canvas.getContext('2d');
+                            canvas.height = viewport.height;
+                            canvas.width = viewport.width;
+                            container.appendChild(canvas);
+                            page.render({ canvasContext: context, viewport });
+                        });
+                    }
+                })
+                .catch(() => {
+                    container.innerHTML = '<div style="padding:16px; color:#ef4444;">Failed to load PDF.</div>';
+                });
+        }
+        
+        function downloadPDF(id) {
+            window.location.href = `/download/${id}`;
+        }
+        
+        // Add active state to current nav item
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentNav = document.querySelector('.nav-link.active');
+            if (currentNav) {
+                currentNav.style.color = '#4f46e5';
+                currentNav.style.fontWeight = '600';
+            }
+        });
+    </script>
+    
+    <style>
+        .nav-link.active {
+            color: #4f46e5 !important;
+            font-weight: 600;
+        }
+        
+        .nav-link.active::after {
+            width: 100% !important;
+        }
+        
+        .pdf-icon {
+            font-size: 3rem;
+            color: #ef4444;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .pdf-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 1rem 0;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+        
+        .pdf-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .pdf-meta i {
+            font-size: 0.8rem;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            color: #9ca3af;
+            margin-bottom: 1.5rem;
+        }
+        
+        .empty-state h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 1rem;
+        }
+        
+        .empty-state p {
+            color: #6b7280;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .pdf-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+        }
+    </style>
 </body>
 </html>
