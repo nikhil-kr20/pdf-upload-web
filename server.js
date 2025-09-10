@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const app = express();
 // Database connection with proper error handling
-mongoose.connect('mongodb://127.0.0.1:27017/notesDB')
+mongoose.connect("mongodb+srv://fidefe2357_db_user:RKNOro2GePdUubVg@cloudnotes.s0ulifd.mongodb.net/?retryWrites=true&w=majority&appName=cloudnotes")
   .then(() => {
     console.log('✅ Database connected successfully to MongoDB');
   })
