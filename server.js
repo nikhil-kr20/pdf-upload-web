@@ -43,6 +43,36 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
+app.post('/register', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const existingUser = await User.findOne({ username });
+    if (existingUser) return res.status(400).send('User already exists');
+
+    const newUser = new User({ username, password });
+    await newUser.save();
+
+    res.status(201).send('User registered successfully');
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+// Login user
+app.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({ username, password });
+    if (!user) return res.status(401).send('Invalid credentials');
+
+    res.send('Login successful! You can now upload files.');
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
