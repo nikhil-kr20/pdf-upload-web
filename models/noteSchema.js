@@ -7,5 +7,4 @@ const noteSchema = new mongoose.Schema({
   fileType: String        // Like 'application/pdf' or 'image/png'
 });
 
-
-module.exports = mongoose.model('Note', noteSchema);
+module.exports = noteSchema;
