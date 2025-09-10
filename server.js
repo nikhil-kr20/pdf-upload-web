@@ -1,17 +1,42 @@
 const express = require('express');
-
+const multer = require('multer');
 const mongoose = require('mongoose');
 const path = require('path');
+
 const app = express();
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
 app.set('view engine', 'ejs'); //use to render frontend site 
 app.set('views', path.join(__dirname, 'views')); //connecting the ejs file 
 
-const user = mongoose.model('UserLogin', require('./models/userlogin'));
-const Note = mongoose.model('Note', require('./models/noteSchema'));
+// Multer setup (for storing files in memory before saving to DB)
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// ======================
+// 1. Connect to Cluster 1 (PDF Storage)
+// ======================
+const pdfDB = mongoose.createConnection("mongodb+srv://fidefe2357_db_user:RKNOro2GePdUubVg@cloudnotes.s0ulifd.mongodb.net/?retryWrites=true&w=majority&appName=cloudnotes");
+
+pdfDB.on('connected', () => console.log('✅ Connected to PDF Database (cloudnotes)'));
+
+// Import Note Schema
+const noteSchema = require('./models/noteSchema');
+const Note = pdfDB.model('Note', noteSchema);
+
+// ======================
+// 2. Connect to Cluster 2 (User Login Storage)
+// ======================
+const userDB = mongoose.createConnection("mongodb+srv://nikhilkr8967_db_user:7QDut7gACNwGz5d4@userlogs.uh3ajqh.mongodb.net/?retryWrites=true&w=majority&appName=userlogs");
+
+userDB.on('connected', () => console.log('✅ Connected to User Login Database (userlogs)'));
+
+// Import User Schema
+const userLoginSchema = require('./models/userlogin');
+const User = userDB.model('UserLogin', userLoginSchema);
 
 // API endpoint to upload a file
 app.get('/', (req, res) => {
