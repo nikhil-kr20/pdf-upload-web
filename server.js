@@ -1,17 +1,8 @@
 const express = require('express');
-const multer = require('multer');
+
 const mongoose = require('mongoose');
 const path = require('path');
 const app = express();
-// Database connection with proper error handling
-mongoose.connect("mongodb+srv://fidefe2357_db_user:RKNOro2GePdUubVg@cloudnotes.s0ulifd.mongodb.net/?retryWrites=true&w=majority&appName=cloudnotes")
-  .then(() => {
-    console.log('✅ Database connected successfully to MongoDB');
-  })
-  .catch((err) => {
-    console.error('❌ Database connection failed:', err.message);
-    console.log('Please make sure MongoDB is running on your system');
-  });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -19,18 +10,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs'); //use to render frontend site 
 app.set('views', path.join(__dirname, 'views')); //connecting the ejs file 
 
-// Multer memory storage
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
-// Mongoose schema for storing file in DB
-const noteSchema = new mongoose.Schema({
-  title: String,
-  file: Buffer,           // File data stored here
-  fileType: String        // Like 'application/pdf' or 'image/png'
-});
-
-const Note = mongoose.model('Note', noteSchema);
+const user = mongoose.model('UserLogin', require('./models/userlogin'));
+const Note = mongoose.model('Note', require('./models/noteSchema'));
 
 // API endpoint to upload a file
 app.get('/', (req, res) => {
