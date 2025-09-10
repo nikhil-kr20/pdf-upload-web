@@ -96,6 +96,7 @@
                 <h2>Upload Your PDF Notes</h2>
                 <p>Share your academic resources with the community and help fellow students succeed.</p>
                 
+                <!-- Fancy Upload Form -->
                 <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="title">Note Title</label>
@@ -118,6 +119,18 @@
                         Upload PDF Notes
                     </button>
                 </form>
+
+                <!-- Simple Upload Form (from main branch, kept as fallback/demo) -->
+                <div class="simple-upload" style="margin-top:2rem; padding:1rem; border:1px dashed #ccc;">
+                    <h3>Quick Upload Form</h3>
+                    <form action="/upload" method="POST" enctype="multipart/form-data">
+                        <input type="text" name="title" placeholder="Enter PDF title" required>
+                        <input type="file" name="file" accept=".pdf" required>
+                        <button type="submit">Upload PDF</button>
+                    </form>
+                    <br>
+                    <a href="/read" class="btn">View Uploaded PDFs</a>
+                </div>
             </div>
         </div>
     </section>
