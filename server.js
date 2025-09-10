@@ -3,7 +3,15 @@ const multer = require('multer');
 const mongoose = require('mongoose');
 const path = require('path');
 const app = express();
-mongoose.connect('mongodb://127.0.0.1:27017/notesDB');
+// Database connection with proper error handling
+mongoose.connect('mongodb://127.0.0.1:27017/notesDB')
+  .then(() => {
+    console.log('✅ Database connected successfully to MongoDB');
+  })
+  .catch((err) => {
+    console.error('❌ Database connection failed:', err.message);
+    console.log('Please make sure MongoDB is running on your system');
+  });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -31,14 +39,32 @@ app.get('/', (req, res) => {
 
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {
+    if (!req.file) {
+      const message = 'No file uploaded';
+      if (req.get('Accept') && req.get('Accept').includes('application/json')) {
+        return res.status(400).json({ success: false, message });
+      }
+      return res.status(400).send(message);
+    }
+
     const newNote = new Note({
       title: req.body.title,
       file: req.file.buffer,
       fileType: req.file.mimetype
     });
     await newNote.save();
-    res.send('File uploaded and saved to DB');
+
+    // If the client expects JSON (AJAX upload), return JSON
+    if (req.get('Accept') && req.get('Accept').includes('application/json')) {
+      return res.json({ success: true, id: newNote._id, title: newNote.title });
+    }
+
+    // Fallback for normal form submissions
+    res.redirect('/read');
   } catch (err) {
+    if (req.get('Accept') && req.get('Accept').includes('application/json')) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
     res.status(500).send(err.message);
   }
 });

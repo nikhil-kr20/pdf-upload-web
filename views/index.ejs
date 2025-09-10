@@ -3,30 +3,318 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
-    <style>
-    .btn {
-        margin-left: 20px;
-        background-color: #007bff; /* Blue */
-        color: white;
-        padding: 8px 16px;
-        border-radius: 4px;
-        text-decoration: none;
-        font-size: 15px;
-    }
-
-    .btn:hover {
-        background-color: #0056b3; /* Darker blue */
-    }
-    </style>
+    <title>Cloud Notes - Your Notes, Everywhere</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preload" href="hero.png" as="image" type="image/png">
 </head>
 <body>
-    <form action="/upload" method="POST" enctype="multipart/form-data">
-        <input type="text" name="title" placeholder="Enter PDF title" required>
-        <input type="file" name="file" accept=".pdf" required>
-        <button type="submit">Upload PDF</button>
-    </form>
-    <br><br>
-        <a href="/read" class="btn">View Uploaded PDFs</a>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 19.5C4 18.1193 5.11929 17 6.5 17H20" stroke="black" stroke-width="1.5" fill="white"/>
+                        <path d="M6.5 2H20V22H6.5C5.11929 22 4 20.8807 4 19.5V2C4 0.619288 5.11929 0 6.5 0Z" stroke="black" stroke-width="1.5" fill="white"/>
+                        <path d="M6.5 0H4C2.89543 0 2 0.895431 2 2V19.5C2 20.8807 2.89543 22 4 22H6.5" stroke="black" stroke-width="1.5" fill="none"/>
+                        <line x1="9" y1="6" x2="15" y2="6" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                        <line x1="9" y1="9" x2="15" y2="9" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                        <line x1="9" y1="12" x2="13" y2="12" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-primary">Cloud</span>
+                    <span class="logo-secondary">Notes</span>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="#home" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#upload" class="nav-link">Upload</a>
+                </li>
+                <li class="nav-item">
+                    <a href="/read" class="nav-link">Browse</a>
+                </li>
+                <li class="nav-item">
+                    <a href="#about" class="nav-link">About</a>
+                </li>
+            </ul>
+            <div class="nav-auth">
+                <button class="btn-auth btn-signin">Sign In</button>
+                <button class="btn-auth btn-signup">Sign Up</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">Your Academic Resource Hub</h1>
+                <p class="hero-subtitle">From lecture notes to exam prep material – everything you need for your college studies in one place.</p>
+                
+                <div class="action-buttons">
+                    <div class="action-card">
+                        <h3>Upload Notes</h3>
+                        <p>Share your academic notes with the community</p>
+                        <button class="btn btn-primary" onclick="scrollToUpload()">
+                            <span class="btn-icon">📤</span>
+                            Upload Notes
+                        </button>
+                    </div>
+                    
+                    <div class="action-card">
+                        <h3>Browse Notes</h3>
+                        <p>Discover notes from students worldwide</p>
+                        <button class="btn btn-secondary" onclick="browseNotes()">
+                            <span class="btn-icon">🔍</span>
+                            Browse Notes
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="hero-visual">
+                <div class="floating-elements">
+                    <div class="floating-note note-1">📝</div>
+                    <div class="floating-note note-2">📊</div>
+                    <div class="floating-note note-3">📈</div>
+                    <div class="floating-note note-4">🎯</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section id="upload" class="upload-section">
+        <div class="upload-container">
+            <div class="upload-form">
+                <h2>Upload Your PDF Notes</h2>
+                <p>Share your academic resources with the community and help fellow students succeed.</p>
+                
+                <!-- Fancy Upload Form -->
+                <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="title">Note Title</label>
+                        <input type="text" id="title" name="title" placeholder="Enter a descriptive title for your notes" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="file">Select PDF File</label>
+                        <div class="file-input-wrapper">
+                            <input type="file" id="file" name="file" accept=".pdf" required>
+                            <label for="file" class="file-input-label">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <span>Choose PDF file or drag and drop here</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                        <span class="btn-icon">📤</span>
+                        Upload PDF Notes
+                    </button>
+                </form>
+
+                <!-- Simple Upload Form (from main branch, kept as fallback/demo) -->
+                <div class="simple-upload" style="margin-top:2rem; padding:1rem; border:1px dashed #ccc;">
+                    <h3>Quick Upload Form</h3>
+                    <form action="/upload" method="POST" enctype="multipart/form-data">
+                        <input type="text" name="title" placeholder="Enter PDF title" required>
+                        <input type="file" name="file" accept=".pdf" required>
+                        <button type="submit">Upload PDF</button>
+                    </form>
+                    <br>
+                    <a href="/read" class="btn">View Uploaded PDFs</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2>Why Choose Cloud Notes?</h2>
+                <p>Discover the features that make us the ultimate academic companion</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🚀</div>
+                    <h3>Instant Access</h3>
+                    <p>Access your notes from any device, anywhere, anytime. No more forgotten notebooks!</p>
+                    <div class="feature-stats">
+                        <span>99.9%</span>
+                        <small>Uptime</small>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🔒</div>
+                    <h3>Secure & Private</h3>
+                    <p>Bank-level encryption keeps your academic work safe and confidential.</p>
+                    <div class="feature-stats">
+                        <span>256-bit</span>
+                        <small>Encryption</small>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">🤝</div>
+                    <h3>Collaborate</h3>
+                    <p>Share notes with classmates, create study groups, and learn together.</p>
+                    <div class="feature-stats">
+                        <span>10K+</span>
+                        <small>Students</small>
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                    <div class="feature-icon">📊</div>
+                    <h3>Smart Organization</h3>
+                    <p>AI-powered categorization and search to find exactly what you need instantly.</p>
+                    <div class="feature-stats">
+                        <span>50+</span>
+                        <small>Subjects</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <h2>How It Works</h2>
+                <p>Get started in just 3 simple steps</p>
+            </div>
+            
+            <div class="steps-container">
+                <div class="step-item">
+                    <div class="step-number">1</div>
+                    <div class="step-icon">📝</div>
+                    <h3>Create Account</h3>
+                    <p>Sign up with your student email and start your academic journey</p>
+                </div>
+                
+                <div class="step-connector"></div>
+                
+                <div class="step-item">
+                    <div class="step-number">2</div>
+                    <div class="step-icon">📤</div>
+                    <h3>Upload Notes</h3>
+                    <p>Share your lecture notes, study guides, and exam materials</p>
+                </div>
+                
+                <div class="step-connector"></div>
+                
+                <div class="step-item">
+                    <div class="step-number">3</div>
+                    <div class="step-icon">🎯</div>
+                    <h3>Study & Succeed</h3>
+                    <p>Access comprehensive resources and ace your exams</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>Empowering Students Worldwide</h2>
+                    <p>Cloud Notes is more than just a note-taking platform. We're building the world's largest academic community where knowledge flows freely and learning becomes collaborative.</p>
+                    <div class="about-features">
+                        <div class="about-feature">
+                            <span class="feature-check">✓</span>
+                            <span>Free for all students</span>
+                        </div>
+                        <div class="about-feature">
+                            <span class="feature-check">✓</span>
+                            <span>Cross-platform compatibility</span>
+                        </div>
+                        <div class="about-feature">
+                            <span class="feature-check">✓</span>
+                            <span>24/7 customer support</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-visual">
+                    <div class="floating-icons">
+                        <div class="floating-icon">📚</div>
+                        <div class="floating-icon">💻</div>
+                        <div class="floating-icon">🎓</div>
+                        <div class="floating-icon">🚀</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h2>Get in Touch</h2>
+                    <p>Have questions? We'd love to hear from you! Our team is here to help you succeed.</p>
+                    <div class="contact-methods">
+                        <div class="contact-method">
+                            <div class="method-icon">📧</div>
+                            <div class="method-details">
+                                <h4>Email Us</h4>
+                                <span>harshsahu10072006@gmail.com</span>
+                            </div>
+                        </div>
+                        <div class="contact-method">
+                            <div class="method-icon">📱</div>
+                            <div class="method-details">
+                                <h4>Mobile</h4>
+                                <span>+91 6203132092</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-form">
+                    <h3>Send us a message</h3>
+                    <form class="contact-form-fields">
+                        <input type="text" placeholder="Your Name" required>
+                        <input type="email" placeholder="Your Email" required>
+                        <textarea placeholder="Your Message" rows="4" required></textarea>
+                        <button type="submit" class="btn btn-primary">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 Cloud Notes. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/script.js"></script>
+    <script>
+        // Additional functions for this page
+        function scrollToUpload() {
+            document.getElementById('upload').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+        
+        function browseNotes() {
+            window.location.href = '/read';
+        }
+    </script>
 </body>
 </html>
