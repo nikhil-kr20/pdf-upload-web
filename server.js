@@ -43,6 +43,14 @@ app.get('/', (req, res) => {
   res.render('index');
 });
 
+app.get('/register', (req, res) => {
+  res.send("welcome to register page"); 
+});
+
+app.get('/login', (req, res) => {
+  res.send("welcome to login page"); 
+});
+
 app.post('/register', async (req, res) => {
   try {
     const { username, password } = req.body;
