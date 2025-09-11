@@ -856,6 +856,63 @@ body {
     opacity: 0.8;
 }
 
+/* Auth Modal (always on top of hero) */
+.auth-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.auth-modal-overlay.show { opacity: 1; }
+
+.auth-modal {
+    width: 92%;
+    max-width: 480px;
+    background: #ffffff;
+    border-radius: 16px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+    overflow: hidden;
+    transform: translateY(20px) scale(0.98);
+    transition: transform 0.25s ease;
+    border: 1px solid #e5e7eb;
+}
+
+.auth-modal-overlay.show .auth-modal { transform: translateY(0) scale(1); }
+
+.auth-close {
+    position: absolute;
+    right: 16px;
+    top: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: #f3f4f6;
+    color: #374151;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.auth-header { padding: 24px 24px 12px 24px; text-align: center; }
+.auth-header h3 { font-weight: 800; color: #1f2937; margin-bottom: 6px; }
+.auth-subtitle { color: #6b7280; }
+
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+.auth-tab { padding: 12px 0; border: none; background: #f3f4f6; color: #374151; font-weight: 700; cursor: pointer; }
+.auth-tab.active { background: #ffffff; color: #1e40af; border-bottom: 2px solid #1e40af; }
+
+.auth-body { padding: 20px 24px 24px 24px; }
+.auth-form .form-group { margin-bottom: 14px; }
+.auth-form label { color: #374151; font-weight: 600; margin-bottom: 6px; display: block; }
+.auth-form input { width: 100%; padding: 12px; border: 1.5px solid #e5e7eb; border-radius: 10px; }
+.auth-error { margin-top: 10px; color: #ef4444; font-weight: 600; text-align: center; }
+
 /* PDF Upload Form Styles */
 .upload-section {
     background: white;
@@ -998,14 +1055,16 @@ body {
 
 .pdf-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-left: 0;
+    margin-right: 0;
 }
 
 .pdf-card {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(20px);
-    padding: 2rem;
+    padding: 7rem;
     border-radius: 20px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.3);

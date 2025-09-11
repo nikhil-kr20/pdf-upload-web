@@ -89,6 +89,46 @@
         </div>
     </section>
 
+    <!-- Auth Modal -->
+    <div id="authModal" class="auth-modal-overlay" style="display:none">
+        <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+            <button class="auth-close" id="authClose" aria-label="Close">×</button>
+            <div class="auth-header">
+                <h3 id="authTitle">Welcome to Cloud Notes</h3>
+                <p class="auth-subtitle">Sign in or create an account to continue</p>
+            </div>
+            <div class="auth-tabs">
+                <button id="authTabLogin" class="auth-tab active" type="button">Login</button>
+                <button id="authTabSignup" class="auth-tab" type="button">Sign Up</button>
+            </div>
+            <div class="auth-body">
+                <form id="loginForm" class="auth-form">
+                    <div class="form-group">
+                        <label for="login-username">Email</label>
+                        <input id="login-username" name="username" type="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" name="password" type="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-secondary" style="width:100%">Sign In</button>
+                </form>
+                <form id="signupForm" class="auth-form" style="display:none">
+                    <div class="form-group">
+                        <label for="signup-username">Email</label>
+                        <input id="signup-username" name="username" type="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input id="signup-password" name="password" type="password" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="width:100%">Create Account</button>
+                </form>
+                <div id="authError" class="auth-error" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Upload Section -->
     <section id="upload" class="upload-section">
         <div class="upload-container">
@@ -302,6 +342,68 @@
         
         function browseNotes() {
             window.location.href = '/read';
+        }
+        // Fallback wiring for auth modal open
+        document.addEventListener('DOMContentLoaded', function() {
+            var authModal = document.getElementById('authModal');
+            var btnSignIn = document.getElementById('btnSignIn');
+            var btnSignUp = document.getElementById('btnSignUp');
+            var tabLogin = document.getElementById('authTabLogin');
+            var tabSignup = document.getElementById('authTabSignup');
+            var loginForm = document.getElementById('loginForm');
+            var signupForm = document.getElementById('signupForm');
+
+            function switchAuthTab(which) {
+                if (!tabLogin || !tabSignup || !loginForm || !signupForm) return;
+                if (which === 'signup') {
+                    tabSignup.classList.add('active');
+                    tabLogin.classList.remove('active');
+                    signupForm.style.display = '';
+                    loginForm.style.display = 'none';
+                } else {
+                    tabLogin.classList.add('active');
+                    tabSignup.classList.remove('active');
+                    loginForm.style.display = '';
+                    signupForm.style.display = 'none';
+                }
+            }
+
+            function openAuth(which) {
+                if (!authModal) return;
+                authModal.style.display = 'flex';
+                requestAnimationFrame(function() { authModal.classList.add('show'); });
+                switchAuthTab(which || 'login');
+            }
+
+            if (btnSignIn) btnSignIn.addEventListener('click', function() { openAuth('login'); });
+            if (btnSignUp) btnSignUp.addEventListener('click', function() { openAuth('signup'); });
+        });
+
+        // Global helper used by inline onclick on nav buttons
+        function openAuthModal(which) {
+            var authModal = document.getElementById('authModal');
+            var tabLogin = document.getElementById('authTabLogin');
+            var tabSignup = document.getElementById('authTabSignup');
+            var loginForm = document.getElementById('loginForm');
+            var signupForm = document.getElementById('signupForm');
+            if (!authModal) return;
+            function switchAuthTab(w){
+                if (!tabLogin || !tabSignup || !loginForm || !signupForm) return;
+                if (w === 'signup') {
+                    tabSignup.classList.add('active');
+                    tabLogin.classList.remove('active');
+                    signupForm.style.display = '';
+                    loginForm.style.display = 'none';
+                } else {
+                    tabLogin.classList.add('active');
+                    tabSignup.classList.remove('active');
+                    loginForm.style.display = '';
+                    signupForm.style.display = 'none';
+                }
+            }
+            authModal.style.display = 'flex';
+            requestAnimationFrame(function(){ authModal.classList.add('show'); });
+            switchAuthTab(which || 'login');
         }
     </script>
 </body>

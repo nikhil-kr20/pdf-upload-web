@@ -55,6 +55,134 @@ document.addEventListener('DOMContentLoaded', function() {
         section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
         observer.observe(section);
     });
+
+    // Auth Modal basic wiring
+    const authModal = document.getElementById('authModal');
+    const btnSignIn = document.getElementById('btnSignIn');
+    const btnSignUp = document.getElementById('btnSignUp');
+    const authClose = document.getElementById('authClose');
+    const tabLogin = document.getElementById('authTabLogin');
+    const tabSignup = document.getElementById('authTabSignup');
+    const loginForm = document.getElementById('loginForm');
+    const signupForm = document.getElementById('signupForm');
+    const authError = document.getElementById('authError');
+
+    function switchAuthTab(which) {
+        if (!tabLogin || !tabSignup || !loginForm || !signupForm) return;
+        if (which === 'signup') {
+            tabSignup.classList.add('active');
+            tabLogin.classList.remove('active');
+            signupForm.style.display = '';
+            loginForm.style.display = 'none';
+        } else {
+            tabLogin.classList.add('active');
+            tabSignup.classList.remove('active');
+            loginForm.style.display = '';
+            signupForm.style.display = 'none';
+        }
+    }
+
+    function openAuth(which) {
+        if (!authModal) return;
+        authModal.style.display = 'flex';
+        requestAnimationFrame(() => authModal.classList.add('show'));
+        switchAuthTab(which || 'login');
+    }
+
+    function closeAuth() {
+        if (!authModal) return;
+        authModal.classList.remove('show');
+        setTimeout(() => { authModal.style.display = 'none'; }, 200);
+    }
+
+    if (btnSignIn) btnSignIn.addEventListener('click', () => openAuth('login'));
+    if (btnSignUp) btnSignUp.addEventListener('click', () => openAuth('signup'));
+    if (authClose) authClose.addEventListener('click', closeAuth);
+    if (authModal) authModal.addEventListener('click', (e) => { if (e.target === authModal) closeAuth(); });
+    if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab('login'));
+    if (tabSignup) tabSignup.addEventListener('click', () => switchAuthTab('signup'));
+
+    // In-memory auth flag (resets on refresh/server restart)
+    let isLoggedIn = false;
+    let loggedInUsername = null;
+    try { window.isLoggedIn = isLoggedIn; } catch {}
+
+    // Submit handlers → server.js uses urlencoded; send FormData
+    if (loginForm) loginForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        if (authError) { authError.style.display = 'none'; authError.textContent = ''; }
+        const fd = new FormData(loginForm);
+        const body = new URLSearchParams();
+        for (const [k, v] of fd.entries()) body.append(k, v);
+        fetch('/login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
+          .then(async (res) => {
+            const txt = await res.text();
+            if (!res.ok) throw new Error(txt || 'Login failed');
+            return txt;
+          })
+          .then(() => {
+            showNotification('Logged in successfully', 'success');
+            // Set in-memory auth state only (not persisted)
+            isLoggedIn = true;
+            loggedInUsername = fd.get('username');
+            try { window.isLoggedIn = isLoggedIn; } catch {}
+            updateNavbarAuth();
+            closeAuth();
+          })
+          .catch(err => {
+            if (authError) { authError.textContent = err.message || 'Login failed'; authError.style.display = 'block'; }
+          });
+    });
+
+    if (signupForm) signupForm.addEventListener('submit', function(e){
+        e.preventDefault();
+        if (authError) { authError.style.display = 'none'; authError.textContent = ''; }
+        const fd = new FormData(signupForm);
+        const body = new URLSearchParams();
+        for (const [k, v] of fd.entries()) body.append(k, v);
+        fetch('/register', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
+          .then(async (res) => {
+            const txt = await res.text();
+            if (!res.ok) throw new Error(txt || 'Registration failed');
+            return txt;
+          })
+          .then(() => {
+            showNotification('Registration successful', 'success');
+            isLoggedIn = true;
+            loggedInUsername = fd.get('username');
+            try { window.isLoggedIn = isLoggedIn; } catch {}
+            updateNavbarAuth();
+            closeAuth();
+          })
+          .catch(err => {
+            if (authError) { authError.textContent = err.message || 'Registration failed'; authError.style.display = 'block'; }
+          });
+    });
+
+    // Navbar auth state handling (client-only)
+    function updateNavbarAuth() {
+        const navAuth = document.querySelector('.nav-auth');
+        if (!navAuth) return;
+        if (isLoggedIn) {
+            navAuth.innerHTML = '<button id="btnLogout" class="btn-auth btn-signin">Logout</button>';
+            const logoutBtn = document.getElementById('btnLogout');
+            if (logoutBtn) logoutBtn.addEventListener('click', () => { isLoggedIn = false; loggedInUsername = null; try { window.isLoggedIn = isLoggedIn; } catch {}; updateNavbarAuth(); showNotification('Logged out', 'success'); });
+        } else {
+            navAuth.innerHTML = '<button id="btnSignIn" class="btn-auth btn-signin">Sign In</button> <button id="btnSignUp" class="btn-auth btn-signup">Sign Up</button>';
+            const si = document.getElementById('btnSignIn');
+            const su = document.getElementById('btnSignUp');
+            if (si) si.addEventListener('click', () => openAuth('login'));
+            if (su) su.addEventListener('click', () => openAuth('signup'));
+        }
+    }
+
+    function escapeHtml(str){ return String(str).replace(/[&<>"]+/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
+
+    // Initialize as logged out on each load
+    isLoggedIn = false;
+    loggedInUsername = null;
+    try { window.isLoggedIn = isLoggedIn; } catch {}
+    updateNavbarAuth();
 });
 
 // Upload Notes function
@@ -120,6 +248,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadForm = document.querySelector('#upload-form');
     if (uploadForm) {
         uploadForm.addEventListener('submit', function(e) {
+            // Block if not logged in
+            if (!isLoggedIn) {
+                e.preventDefault();
+                showNotification('Please sign in to upload notes', 'warning');
+                openAuth('login');
+                return;
+            }
             const titleInput = document.querySelector('input[name="title"]');
             const fileInput = document.querySelector('input[name="file"]');
             

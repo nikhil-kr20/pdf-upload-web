@@ -2,7 +2,6 @@ const express = require('express');
 const multer = require('multer');
 const mongoose = require('mongoose');
 const path = require('path');
-const session = require('express-session');
 
 const app = express();
 
@@ -55,16 +54,23 @@ app.get('/login', (req, res) => {
 app.post('/register', async (req, res) => {
   try {
     const { username, password } = req.body;
-
+    if (!username || !password) {
+      return res.status(400).send('Username and password are required');
+    }
+    
     const existingUser = await User.findOne({ username });
     if (existingUser) return res.status(400).send('User already exists');
 
     const newUser = new User({ username, password });
     await newUser.save();
 
-    res.status(201).send('User registered successfully');
+    return res.status(201).send('Registration successful');
   } catch (err) {
-    res.status(500).send(err.message);
+    console.error('Register error:', err);
+    if (err && err.code === 11000) {
+      return res.status(409).send('User already exists');
+    }
+    res.status(500).send('Registration failed');
   }
 });
 
@@ -72,15 +78,29 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).send('Username and password are required');
+    }
 
     const user = await User.findOne({ username, password });
     if (!user) return res.status(401).send('Invalid credentials');
-
+    // req.session.user = {
+    //   id: user._id,
+    //   username: user.username
+    // };
     res.send('Login successful! You can now upload files.');
   } catch (err) {
-    res.status(500).send(err.message);
+    console.error('Login error:', err);
+    res.status(500).send('Login failed');
   }
 });
+
+// app.get('/logout', (req, res) => {
+//   req.session.destroy(err=>{
+//     if(err) return res.status(505).send('logout error');
+//     res.send('Logout successful');
+//   });
+// });
 
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {
