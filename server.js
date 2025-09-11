@@ -59,7 +59,9 @@ app.post('/register', async (req, res) => {
     }
     
     const existingUser = await User.findOne({ username });
-    if (existingUser) return res.status(400).send('User already exists');
+    if (existingUser) {
+      return res.status(409).send('User already exists');
+    }
 
     const newUser = new User({ username, password });
     await newUser.save();
@@ -84,23 +86,13 @@ app.post('/login', async (req, res) => {
 
     const user = await User.findOne({ username, password });
     if (!user) return res.status(401).send('Invalid credentials');
-    // req.session.user = {
-    //   id: user._id,
-    //   username: user.username
-    // };
-    res.send('Login successful! You can now upload files.');
+
+    res.send('Login successful');
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).send('Login failed');
   }
 });
-
-// app.get('/logout', (req, res) => {
-//   req.session.destroy(err=>{
-//     if(err) return res.status(505).send('logout error');
-//     res.send('Logout successful');
-//   });
-// });
 
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {

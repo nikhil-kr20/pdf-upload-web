@@ -12,57 +12,40 @@
         .pdf-viewer-container {
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             min-height: 100vh;
-            padding: 100px 0 50px;
+            padding: 110px 0 50px; /* space for fixed topbar */
         }
         
-        .pdf-viewer-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            margin-bottom: 2rem;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        
-        .pdf-viewer-header h1 {
-            font-size: 2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #1e40af, #3b82f6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .pdf-viewer-header .pdf-icon {
-            font-size: 2rem;
-            color: #ef4444;
-        }
-        
-        .pdf-actions {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .pdf-actions .btn {
-            padding: 0.75rem 1.5rem;
-            font-size: 0.9rem;
-        }
+        /* (Header removed) */
         
         .pdf-container {
-            max-width: 1200px;
+            max-width: 1100px;
             margin: 0 auto;
             padding: 0 20px;
         }
+        
+        /* Fixed topbar (acts like navbar for PDF tools) */
+        .pdf-topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255,255,255,0.96);
+            backdrop-filter: blur(18px);
+            border-bottom: 1px solid rgba(15,23,42,0.06);
+            box-shadow: 0 10px 24px rgba(0,0,0,0.06);
+        }
+        .pdf-topbar-inner { max-width: 1100px; margin: 0 auto; padding: 10px 12px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .pdf-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+        .toolbar-left, .toolbar-right { display: flex; align-items: center; gap: 8px; }
+        .tool-btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 12px; border-radius: 10px; border: 1px solid rgba(15,23,42,0.08);
+            background: #ffffff; color: #1f2937; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .tool-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(0,0,0,0.08); }
+        .tool-sep { width: 1px; height: 28px; background: rgba(15,23,42,0.08); margin: 0 4px; }
+        .zoom-indicator { font-weight: 700; color: #1e293b; padding: 0 8px; }
         
         .pdf-pages {
             display: flex;
@@ -194,23 +177,6 @@
         }
         
         @media (max-width: 768px) {
-            .pdf-viewer-header {
-                padding: 1.5rem;
-                margin: 0 20px 2rem;
-            }
-            
-            .pdf-viewer-header h1 {
-                font-size: 1.5rem;
-                flex-direction: column;
-                text-align: center;
-                gap: 0.5rem;
-            }
-            
-            .pdf-actions {
-                justify-content: center;
-                margin-top: 1rem;
-            }
-            
             .back-button {
                 position: relative;
                 top: auto;
@@ -223,36 +189,34 @@
     </style>
 </head>
 <body>
-    <!-- Back Button -->
-    <button class="back-button" onclick="goBack()">
-        <i class="fas fa-arrow-left"></i>
-        Back to Notes
-    </button>
+    <!-- Fixed Topbar with Back + Tools -->
+    <div class="pdf-topbar">
+        <div class="pdf-topbar-inner">
+            <div class="toolbar-left">
+                <button class="tool-btn" onclick="goBack()"><i class="fas fa-arrow-left"></i> Back</button>
+            </div>
+            <div class="pdf-toolbar">
+                <div class="toolbar-left">
+                    <button class="tool-btn" onclick="zoomOut()"><i class="fas fa-search-minus"></i> Zoom Out</button>
+                    <span class="zoom-indicator" id="zoomIndicator">100%</span>
+                    <button class="tool-btn" onclick="zoomIn()"><i class="fas fa-search-plus"></i> Zoom In</button>
+                    <div class="tool-sep"></div>
+                    <button class="tool-btn" onclick="fitWidth()"><i class="fas fa-arrows-alt-h"></i> Fit Width</button>
+                </div>
+                <div class="toolbar-right">
+                    <button class="tool-btn" onclick="downloadPDF()"><i class="fas fa-download"></i> Download</button>
+                    <button class="tool-btn" onclick="printPDF()"><i class="fas fa-print"></i> Print</button>
+                    <button class="tool-btn" onclick="sharePDF()"><i class="fas fa-share"></i> Share</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- PDF Viewer Container -->
     <div class="pdf-viewer-container">
         <div class="pdf-container">
-            <!-- PDF Header -->
-            <div class="pdf-viewer-header">
-                <h1>
-                    <i class="fas fa-file-pdf pdf-icon"></i>
-                    <%= note.title %>
-                </h1>
-                <div class="pdf-actions">
-                    <button class="btn btn-primary" onclick="downloadPDF()">
-                        <i class="fas fa-download"></i>
-                        Download PDF
-                    </button>
-                    <button class="btn btn-secondary" onclick="printPDF()">
-                        <i class="fas fa-print"></i>
-                        Print
-                    </button>
-                    <button class="btn btn-secondary" onclick="sharePDF()">
-                        <i class="fas fa-share"></i>
-                        Share
-                    </button>
-                </div>
-            </div>
+            
+            <!-- PDF Header removed as requested -->
 
             <!-- Loading State -->
             <div id="loading" class="loading-container">
@@ -283,7 +247,8 @@
         const container = document.getElementById('pdf-pages');
         const loading = document.getElementById('loading');
         const error = document.getElementById('error');
-        let scale = 1.2; // Default zoom level
+        let scale = 1.0; // not used directly
+        let zoomFactor = 1.0; // user zoom, 1.0 = fit width
         let pdfDoc = null;
 
         // Load and render PDF
@@ -302,9 +267,7 @@
                 container.style.display = 'flex';
                 
                 // Render all pages
-                for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-                    renderPage(pdf, pageNum);
-                }
+                renderDocument();
             })
             .catch(err => {
                 console.error('Error loading PDF:', err);
@@ -312,34 +275,34 @@
                 error.style.display = 'flex';
             });
 
+        function renderDocument(){
+            container.innerHTML = '';
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+                renderPage(pdfDoc, pageNum);
+            }
+        }
+        
         // Function to render a single page
         function renderPage(pdf, pageNum) {
             pdf.getPage(pageNum).then(page => {
-                const viewport = page.getViewport({ scale });
+                const maxWidth = Math.min(1000, document.querySelector('.pdf-container').clientWidth - 40);
+                const unscaled = page.getViewport({ scale: 1 });
+                const fitScale = maxWidth / unscaled.width;
+                const viewport = page.getViewport({ scale: fitScale * zoomFactor });
                 
-                // Create page container
                 const pageContainer = document.createElement('div');
                 pageContainer.className = 'pdf-page';
-                
-                // Create canvas
                 const canvas = document.createElement('canvas');
                 const context = canvas.getContext('2d');
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
-                
-                // Create page number
                 const pageNumber = document.createElement('div');
                 pageNumber.className = 'page-number';
                 pageNumber.textContent = `Page ${pageNum} of ${pdf.numPages}`;
-                
-                // Assemble page
                 pageContainer.appendChild(canvas);
                 pageContainer.appendChild(pageNumber);
                 container.appendChild(pageContainer);
-                
-                // Render the page
-                const renderContext = { canvasContext: context, viewport };
-                page.render(renderContext);
+                page.render({ canvasContext: context, viewport });
             });
         }
 
@@ -465,6 +428,15 @@
             }
         `;
         document.head.appendChild(style);
+
+        // Toolbar handlers
+        function updateZoomIndicator(){
+            const zi = document.getElementById('zoomIndicator');
+            if (zi) zi.textContent = Math.round(zoomFactor * 100) + '%';
+        }
+        function zoomIn(){ zoomFactor = Math.min(3, zoomFactor * 1.15); updateZoomIndicator(); renderDocument(); }
+        function zoomOut(){ zoomFactor = Math.max(0.5, zoomFactor / 1.15); updateZoomIndicator(); renderDocument(); }
+        function fitWidth(){ zoomFactor = 1.0; updateZoomIndicator(); renderDocument(); }
     </script>
 </body>
 </html>

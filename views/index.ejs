@@ -44,8 +44,8 @@
                 </li>
             </ul>
             <div class="nav-auth">
-                <form action="/login" method="get"><button class="btn-auth btn-signin" >Sign In</button></form>
-                <form action="/register" method="get"><button class="btn-auth btn-signup">Sign Up</button></form>
+                <button id="btnSignIn" class="btn-auth btn-signin" onclick="openAuthModal('login')">Sign In</button>
+                <button id="btnSignUp" class="btn-auth btn-signup" onclick="openAuthModal('signup')">Sign Up</button>
             </div>
         </div>
     </nav>
@@ -61,7 +61,7 @@
                     <div class="action-card">
                         <h3>Upload Notes</h3>
                         <p>Share your academic notes with the community</p>
-                        <button class="btn btn-primary" onclick="scrollToUpload()">
+                        <button class="btn btn-primary" onclick="if(window.isLoggedIn){scrollToUpload()}else{showNotification('Please sign in to upload notes','warning');openAuthModal('login')}">
                             <span class="btn-icon">📤</span>
                             Upload Notes
                         </button>

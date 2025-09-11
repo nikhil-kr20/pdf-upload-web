@@ -50,7 +50,7 @@
     </nav>
 
     <!-- PDF List Section -->
-    <section class="pdf-list-section">
+    <section class="pdf-list-section" style="background: url('/hero1.png') center/cover no-repeat;">
         <div class="pdf-list-container">
             <div class="pdf-list-header">
                 <p style="color:#ffffff;">Discover and access notes shared by students worldwide</p>
@@ -66,9 +66,9 @@
             <% if (notes && notes.length > 0) { %>
                 <div class="pdf-grid">
                     <% notes.forEach(note => { %>
-                        <div class="pdf-card">
-                            <div class="pdf-icon">
-                                <i class="fas fa-file-pdf"></i>
+                        <div class="pdf-card" data-title="<%= (note.title || '').toLowerCase() %>">
+                            <div class="thumb-wrap">
+                                <canvas class="thumb-canvas" data-id="<%= note._id %>"></canvas>
                             </div>
                             <h3><%= note.title %></h3>
                             <div class="pdf-meta">
@@ -111,11 +111,6 @@
     </section>
 
     <!-- Footer removed on browse page by request -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; 2025 Cloud Notes. All rights reserved.</p>
-        </div>
-    </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script src="/script.js"></script>
@@ -146,8 +141,8 @@
                     container.innerHTML = '';
                     for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
                         pdf.getPage(pageNum).then(page => {
-                            // Fit width to modal: compute scale based on desired width
-                            const desiredWidth = Math.min(1100, window.innerWidth * 0.9 - 80); // padding accounted
+                            // Fit width to modal: compute scale based on desired width (slightly less aggressive)
+                            const desiredWidth = Math.min(900, window.innerWidth * 0.8 - 80);
                             const unscaledViewport = page.getViewport({ scale: 1 });
                             const scale = desiredWidth / unscaledViewport.width;
                             const viewport = page.getViewport({ scale });
