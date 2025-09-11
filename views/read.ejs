@@ -124,9 +124,7 @@
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         }
     </script>
-    <script>
-        window.isLoggedIn = <%- JSON.stringify(!!user) %>;
-    </script>
+        window.isLoggedIn = <%= JSON.stringify(!!user) %> ;
     <script src="/script.js"></script>
     <script>
         // Modal PDF viewer on this page
