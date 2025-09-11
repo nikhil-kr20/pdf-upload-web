@@ -1,10 +1,23 @@
 const mongoose = require('mongoose');
 
-// Mongoose schema for storing file in DB
+// Mongoose schema for storing only file metadata
 const noteSchema = new mongoose.Schema({
-  title: String,
-  file: Buffer,           // File data stored here
-  fileType: String        // Like 'application/pdf' or 'image/png'
+  title: {
+    type: String,
+    required: true,
+  },
+  fileUrl: {
+    type: String, // Cloudinary URL
+    required: true,
+  },
+  fileType: {
+    type: String, // e.g., 'application/pdf'
+    required: true,
+  },
+  uploadedAt: {
+    type: Date,
+    default: Date.now,
+  }
 });
 
 module.exports = noteSchema;
