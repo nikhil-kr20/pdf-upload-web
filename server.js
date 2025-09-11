@@ -8,22 +8,6 @@ require('dotenv').config();
 const app = express();
 
 // ======================
-// Middleware & Config
-// ======================
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
-
-app.set('view engine', 'ejs'); // for frontend rendering
-app.set('views', path.join(__dirname, 'views')); // connect to ejs views folder
-
-// ======================
-// Multer Setup - Store files in memory
-// ======================
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-// ======================
 // Cloudinary Configuration
 // ======================
 cloudinary.config({
@@ -33,21 +17,42 @@ cloudinary.config({
 });
 
 // ======================
+// Middleware & Config
+// ======================
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// ======================
+// Multer Setup - Memory storage
+// ======================
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// ======================
 // MongoDB Connections
 // ======================
 
-// 1. PDF Storage Database
-const pdfDB = mongoose.createConnection(process.env.PDF_DB_URI);
-
-pdfDB.on('connected', () => console.log('✅ Connected to PDF Database (cloudnotes)'));
+// 1. PDF Database
+const pdfDB = mongoose.createConnection(process.env.PDF_DB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+pdfDB.on('connected', () => console.log('✅ Connected to PDF Database'));
+pdfDB.on('error', (err) => console.error('❌ PDF DB connection error:', err));
 
 const noteSchema = require('./models/noteSchema');
 const Note = pdfDB.model('Note', noteSchema);
 
-// 2. User Authentication Database
-const userDB = mongoose.createConnection(process.env.USER_DB_URI);
-
-userDB.on('connected', () => console.log('✅ Connected to User Login Database (userlogs)'));
+// 2. User Database
+const userDB = mongoose.createConnection(process.env.USER_DB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+userDB.on('connected', () => console.log('✅ Connected to User Database'));
+userDB.on('error', (err) => console.error('❌ User DB connection error:', err));
 
 const userLoginSchema = require('./models/userlogin');
 const User = userDB.model('UserLogin', userLoginSchema);
@@ -56,18 +61,12 @@ const User = userDB.model('UserLogin', userLoginSchema);
 // Routes
 // ======================
 
-// Home Page
-app.get('/', (req, res) => {
-  res.render('index');
-});
+// Home
+app.get('/', (req, res) => res.render('index'));
 
-app.get('/register', (req, res) => {
-  res.send("Welcome to register page");
-});
-
-app.get('/login', (req, res) => {
-  res.send("Welcome to login page");
-});
+// Register/Login pages
+app.get('/register', (req, res) => res.send("Register Page"));
+app.get('/login', (req, res) => res.send("Login Page"));
 
 // ======================
 // User Registration
@@ -76,14 +75,10 @@ app.post('/register', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).send('Username and password are required');
-    }
+    if (!username || !password) return res.status(400).send('Username and password are required');
 
     const existingUser = await User.findOne({ username });
-    if (existingUser) {
-      return res.status(409).send('User already exists');
-    }
+    if (existingUser) return res.status(409).send('User already exists');
 
     const newUser = new User({ username, password });
     await newUser.save();
@@ -91,9 +86,6 @@ app.post('/register', async (req, res) => {
     res.status(201).send('Registration successful');
   } catch (err) {
     console.error('Register error:', err);
-    if (err.code === 11000) {
-      return res.status(409).send('User already exists');
-    }
     res.status(500).send('Registration failed');
   }
 });
@@ -105,9 +97,7 @@ app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    if (!username || !password) {
-      return res.status(400).send('Username and password are required');
-    }
+    if (!username || !password) return res.status(400).send('Username and password are required');
 
     const user = await User.findOne({ username, password });
     if (!user) return res.status(401).send('Invalid credentials');
@@ -120,39 +110,41 @@ app.post('/login', async (req, res) => {
 });
 
 // ======================
-// Upload PDF - Save to Cloudinary, Store URL in MongoDB
+// Upload PDF
 // ======================
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({ success: false, message: 'No file uploaded' });
-    }
+    if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
 
-    // Upload PDF to Cloudinary
+    // Upload to Cloudinary
     const result = await new Promise((resolve, reject) => {
-      cloudinary.uploader.upload_stream(
+      const uploadStream = cloudinary.uploader.upload_stream(
         {
-          resource_type: 'raw', // For PDFs and non-image files
-          folder: 'pdf_uploads',
-          public_id: Date.now() + '-' + req.file.originalname.replace(/\s+/g, '_'),
+          resource_type: 'raw', // Required for PDFs
+          folder: 'pdf_uploads', // Cloudinary auto-creates this folder
+          public_id: `${Date.now()}-${req.file.originalname.replace(/\s+/g, '_')}`,
         },
         (error, uploadResult) => {
           if (error) return reject(error);
           resolve(uploadResult);
         }
-      ).end(req.file.buffer);
+      );
+      uploadStream.end(req.file.buffer);
     });
 
-    // Save only URL + metadata to MongoDB
+    // Save Cloudinary URL + metadata in MongoDB
     const newNote = new Note({
-      title: req.body.title,
+      title: req.body.title || req.file.originalname,
       fileUrl: result.secure_url,
       fileType: req.file.mimetype,
     });
-
     await newNote.save();
 
-    res.json({ success: true, message: 'File uploaded successfully', data: newNote });
+    res.json({
+      success: true,
+      message: 'File uploaded successfully',
+      data: newNote,
+    });
   } catch (err) {
     console.error('Upload error:', err);
     res.status(500).json({ success: false, message: 'File upload failed' });
@@ -160,28 +152,34 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 });
 
 // ======================
-// View All Uploaded PDFs
+// View All PDFs
 // ======================
 app.get('/read', async (req, res) => {
   try {
     const notes = await Note.find();
     res.render('read', { notes });
   } catch (err) {
-    console.error('Error reading notes:', err);
+    console.error('Read error:', err);
     res.status(500).send('Error reading files');
   }
 });
 
 // ======================
-// View Single File
+// View Single PDF
 // ======================
 app.get('/view/:id', async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const { id } = req.params;
+
+    // Validate ObjectId before querying MongoDB
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send('Invalid file ID');
+    }
+
+    const note = await Note.findById(id);
     if (!note) return res.status(404).send('File not found');
 
-    // Redirect to the Cloudinary-hosted PDF
-    res.redirect(note.fileUrl);
+    res.redirect(note.fileUrl); // Redirect directly to Cloudinary link
   } catch (err) {
     console.error('View error:', err);
     res.status(500).send('Error loading file');
@@ -193,10 +191,16 @@ app.get('/view/:id', async (req, res) => {
 // ======================
 app.get('/download/:id', async (req, res) => {
   try {
-    const note = await Note.findById(req.params.id);
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).send('Invalid file ID');
+    }
+
+    const note = await Note.findById(id);
     if (!note) return res.status(404).send('File not found');
 
-    res.redirect(note.fileUrl); // Cloudinary handles direct file download
+    res.redirect(note.fileUrl); // Cloudinary serves the file directly
   } catch (err) {
     console.error('Download error:', err);
     res.status(500).send('Error downloading file');
