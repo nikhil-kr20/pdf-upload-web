@@ -199,7 +199,7 @@ app.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
 app.get('/read', async (req, res) => {
   try {
     const notes = await Note.find();
-    res.render('read', { notes });
+    res.render('read', { notes, user: req.user || null });
   } catch (err) {
     console.error('Read error:', err);
     res.status(500).send('Error reading files');
