@@ -53,8 +53,14 @@
     <section class="pdf-list-section">
         <div class="pdf-list-container">
             <div class="pdf-list-header">
-                <h1>Browse Academic Notes</h1>
-                <p>Discover and access notes shared by students worldwide</p>
+                <p style="color:#ffffff;">Discover and access notes shared by students worldwide</p>
+                <div class="browse-search">
+                    <div class="browse-search-inner">
+                        <i class="fas fa-search"></i>
+                        <input id="searchInput" type="text" placeholder="Search notes by title...">
+                        <button id="searchClear" class="btn btn-secondary" type="button">Clear</button>
+                    </div>
+                </div>
             </div>
             
             <% if (notes && notes.length > 0) { %>
@@ -104,7 +110,7 @@
         </div>
     </section>
 
-    <!-- Footer -->
+    <!-- Footer removed on browse page by request -->
     <footer class="footer">
         <div class="container">
             <p>&copy; 2025 Cloud Notes. All rights reserved.</p>
@@ -167,6 +173,55 @@
             window.location.href = `/download/${id}`;
         }
         
+        // Render thumbnails for cards (first page preview)
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvases = document.querySelectorAll('.thumb-canvas');
+            canvases.forEach((canvas) => {
+                const id = canvas.getAttribute('data-id');
+                const url = `/download/${id}`;
+                fetch(url)
+                  .then(res => res.arrayBuffer())
+                  .then(data => pdfjsLib.getDocument({ data }).promise)
+                  .then(pdf => pdf.getPage(1))
+                  .then(page => {
+                      const desiredWidth = 320;
+                      const viewport1x = page.getViewport({ scale: 1 });
+                      const scale = desiredWidth / viewport1x.width;
+                      const viewport = page.getViewport({ scale });
+                      // Render full page to offscreen, then copy top half to visible canvas
+                      const off = document.createElement('canvas');
+                      off.width = viewport.width;
+                      off.height = viewport.height;
+                      const offCtx = off.getContext('2d');
+                      page.render({ canvasContext: offCtx, viewport }).promise.then(() => {
+                          const ctx = canvas.getContext('2d');
+                          canvas.width = viewport.width;
+                          canvas.height = Math.floor(viewport.height / 2);
+                          ctx.drawImage(off, 0, 0, off.width, off.height / 2, 0, 0, canvas.width, canvas.height);
+                      });
+                  })
+                  .catch(() => {
+                      canvas.outerHTML = '<div class="thumb-fallback">Preview unavailable</div>';
+                  });
+            });
+        });
+        
+        // Search filter logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('searchClear');
+            const cards = Array.from(document.querySelectorAll('.pdf-card'));
+            function runFilter() {
+                const q = (input.value || '').trim().toLowerCase();
+                cards.forEach(card => {
+                    const t = card.getAttribute('data-title') || '';
+                    card.style.display = q && !t.includes(q) ? 'none' : '';
+                });
+            }
+            if (input) input.addEventListener('input', runFilter);
+            if (clearBtn) clearBtn.addEventListener('click', function(){ input.value=''; runFilter(); });
+        });
+
         // Add active state to current nav item
         document.addEventListener('DOMContentLoaded', function() {
             const currentNav = document.querySelector('.nav-link.active');
@@ -187,10 +242,27 @@
             width: 100% !important;
         }
         
-        .pdf-icon {
-            font-size: 3rem;
-            color: #ef4444;
+        .thumb-wrap {
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
             margin-bottom: 1rem;
+            box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+            background: #0f172a;
+        }
+        .thumb-canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            transform: scale(1.02);
+            transition: transform 0.35s ease;
+        }
+        .pdf-card:hover .thumb-canvas {
+            transform: scale(1.06);
+        }
+        .thumb-fallback {
+            padding: 48px 16px;
+            color: #94a3b8;
             text-align: center;
         }
         
@@ -244,6 +316,51 @@
             font-size: 1.1rem;
         }
         
+        /* 3 cards per row with extra spacing */
+        .pdf-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(260px, 1fr));
+            gap: 36px;
+        }
+        @media (max-width: 1024px) {
+            .pdf-grid { grid-template-columns: repeat(2, minmax(240px, 1fr)); }
+        }
+        @media (max-width: 640px) {
+            .pdf-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Professional card styling */
+        .pdf-card {
+            background: #ffffff;
+            border-radius: 18px;
+            padding: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            text-align: center;
+        }
+        .pdf-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.14);
+            border-color: rgba(59,130,246,0.25);
+        }
+        .pdf-card h3 { margin: 8px 0 6px; color:#0f172a; font-weight: 700; font-size: 1.05rem; }
+        .pdf-meta { justify-content:center; gap: 10px; }
+        .pdf-meta .pdf-type, .pdf-meta .pdf-date { background:#f8fafc; padding:6px 10px; border-radius:999px; }
+        .pdf-actions { display:flex; justify-content:center; gap: .75rem; }
+
+        /* Center contents with generous side padding and max width */
+        .pdf-list-container { width: min(1400px, 100% - 96px); margin-left: auto; margin-right: auto; padding-left: 0; padding-right: 0; }
+
+        /* Search bar styling */
+        .browse-search { display:flex; justify-content:center; margin: 16px 0 24px; }
+        .browse-search-inner {
+            display:flex; align-items:center; gap:12px; padding: 14px 14px; border-radius: 999px;
+            background: rgba(255,255,255,0.92); backdrop-filter: blur(10px); box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+            width: min(760px, 100%);
+        }
+        .browse-search-inner i { color:#6b7280; }
+        .browse-search-inner input { flex:1; border:none; outline:none; background: transparent; font-size: 0.95rem; color:#111827; }
         @media (max-width: 768px) {
             .pdf-meta {
                 flex-direction: column;
