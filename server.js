@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const mongoose = require('mongoose');
 const path = require('path');
+const session = require('express-session');
 
 const app = express();
 
