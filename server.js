@@ -2,6 +2,7 @@ const express = require('express');
 const multer = require('multer');
 const mongoose = require('mongoose');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 
@@ -19,7 +20,7 @@ const upload = multer({ storage });
 // ======================
 // 1. Connect to Cluster 1 (PDF Storage)
 // ======================
-const pdfDB = mongoose.createConnection("mongodb+srv://fidefe2357_db_user:RKNOro2GePdUubVg@cloudnotes.s0ulifd.mongodb.net/?retryWrites=true&w=majority&appName=cloudnotes");
+const pdfDB = mongoose.createConnection(process.env.PDF_DB_URI);
 
 pdfDB.on('connected', () => console.log('✅ Connected to PDF Database (cloudnotes)'));
 
@@ -30,7 +31,7 @@ const Note = pdfDB.model('Note', noteSchema);
 // ======================
 // 2. Connect to Cluster 2 (User Login Storage)
 // ======================
-const userDB = mongoose.createConnection("mongodb+srv://nikhilkr8967_db_user:7QDut7gACNwGz5d4@userlogs.uh3ajqh.mongodb.net/?retryWrites=true&w=majority&appName=userlogs");
+const userDB = mongoose.createConnection(process.env.USER_DB_URI);
 
 userDB.on('connected', () => console.log('✅ Connected to User Login Database (userlogs)'));
 
@@ -179,5 +180,5 @@ app.get('/download/:id', async (req, res) => {
   }
 });
 
-
-app.listen(5000, () => console.log('Server started on port http://localhost:5000'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server started on port http://localhost:${PORT}`));
