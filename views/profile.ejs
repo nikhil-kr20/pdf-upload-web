@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Profile - Cloud Notes</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: linear-gradient(135deg, #eef2ff, #e0e7ff); }
+        .profile-wrapper { padding-top: 100px; padding-bottom: 60px; }
+        .profile-container { width: min(1200px, 100% - 40px); margin: 0 auto; display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
+        .card { background:#fff; border-radius:20px; border:1px solid rgba(15,23,42,.06); box-shadow:0 10px 24px rgba(0,0,0,.06); }
+        .card-header { padding:18px 20px; border-bottom:1px solid rgba(15,23,42,.06); font-weight:800; color:#0f172a; }
+        .card-body { padding:20px; }
+        .card-body.scrollable { max-height: 520px; overflow: auto; }
+        .profile-head { display:flex; align-items:center; gap:14px; padding:20px; }
+        .profile-avatar { width:56px; height:56px; border-radius:50%; background:#1e40af; color:#fff; display:flex; align-items:center; justify-content:center; font-weight:900; font-size:20px; }
+        .profile-info h3 { margin:0; font-size:1.25rem; color:#0f172a; }
+        .profile-info p { margin:2px 0 0; color:#475569; font-size:.95rem; }
+        .form-grid { display:grid; grid-template-columns: 1fr; gap:14px; }
+        .form-row { display:grid; grid-template-columns: 1fr; gap:12px; }
+        .form-row.form-row-2 { grid-template-columns: 1fr 1fr; }
+        .form-group { display:flex; flex-direction:column; gap:6px; }
+        .form-group label { font-weight:700; color:#334155; }
+        .form-group input { width:100%; height:44px; padding:10px 12px; border:1.5px solid #e5e7eb; border-radius:10px; font-size:14px; }
+        .btn-row { display:flex; gap:10px; justify-content:flex-end; }
+        .uploads-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+        .uploads-title { font-size:1.15rem; font-weight:900; color:#0f172a; letter-spacing:.2px; }
+        .uploads-grid { display:grid; grid-template-columns: repeat(2, minmax(260px,1fr)); gap:16px; }
+        .upload-card { background:#f8fafc; border:1px solid rgba(15,23,42,.08); border-radius:16px; padding:14px; box-shadow:0 10px 24px rgba(2,6,23,.06); transition: transform .2s ease, box-shadow .2s ease; }
+        .upload-card:hover { transform: translateY(-4px); box-shadow:0 16px 32px rgba(2,6,23,.12); }
+        .upload-card h4 { margin:8px 0 6px; font-size:1.05rem; color:#0f172a; font-weight:900; letter-spacing:.2px; }
+        .upload-meta { color:#64748b; font-size:.85rem; display:flex; gap:10px; }
+        .upload-actions { display:flex; flex-wrap: wrap; gap:10px; justify-content:space-between; margin-top:10px; }
+        .action-btn { display:inline-flex; align-items:center; gap:8px; justify-content:center; padding:.55rem .9rem; font-size:.9rem; font-weight:800; border-radius: 999px; border:none; flex:1 1 30%; min-width:120px; text-decoration:none; }
+        .action-view { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color:#fff; }
+        .action-download { background: linear-gradient(135deg, #10b981, #059669); color:#fff; }
+        .action-delete { background: linear-gradient(135deg, #ef4444, #dc2626); color:#fff; }
+        .action-btn:hover { filter: brightness(1.05); transform: translateY(-1px); transition: all .15s ease; }
+        .thumb-wrap { position: relative; overflow: hidden; border-radius: 12px; margin-bottom: 10px; background: #0f172a; box-shadow: 0 8px 20px rgba(2,6,23,.25); }
+        .thumb-canvas { display:block; width:100%; height:auto; transform: scale(1.02); transition: transform .3s ease; }
+        .upload-card:hover .thumb-canvas { transform: scale(1.06); }
+        @media (max-width: 1024px){ .profile-container { grid-template-columns: 1fr; } .uploads-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo" onclick="window.location='/'">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 19.5C4 18.1193 5.11929 17 6.5 17H20" stroke="black" stroke-width="1.5" fill="white"/>
+                        <path d="M6.5 2H20V22H6.5C5.11929 22 4 20.8807 4 19.5V2C4 0.619288 5.11929 0 6.5 0Z" stroke="black" stroke-width="1.5" fill="white"/>
+                        <path d="M6.5 0H4C2.89543 0 2 0.895431 2 2V19.5C2 20.8807 2.89543 22 4 22H6.5" stroke="black" stroke-width="1.5" fill="none"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-primary">Cloud</span>
+                    <span class="logo-secondary">Notes</span>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="/#upload" class="nav-link">Upload</a></li>
+                <li class="nav-item"><a href="/read" class="nav-link">Browse</a></li>
+            </ul>
+            <div class="nav-auth">
+                <div class="nav-profile">
+                    <a href="/profile" class="profile-link" title="Profile">
+                        <span class="avatar"><%= (me.name || me.username || 'U').charAt(0).toUpperCase() %></span>
+                        <span class="profile-name"><%= me.name || me.username %></span>
+                    </a>
+                    <form action="/logout" method="POST" style="display:inline">
+                        <button type="submit" class="btn-auth btn-signin">Logout</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="profile-wrapper">
+        <div class="profile-container">
+            <div class="card">
+                <div class="profile-head">
+                    <div class="profile-avatar"><%= (me.name || me.username || 'U').charAt(0).toUpperCase() %></div>
+                    <div class="profile-info">
+                        <h3><%= me.name %></h3>
+                        <p><%= me.username %></p>
+                    </div>
+                </div>
+                <div class="card-header">Edit Profile</div>
+                <div class="card-body">
+                    <form id="profileForm">
+                        <div class="form-grid">
+                            <div class="form-row form-row-2">
+                                <div class="form-group">
+                                    <label for="name">Full Name</label>
+                                    <input id="name" name="name" type="text" value="<%= me.name %>" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="username">Email</label>
+                                    <input id="username" name="username" type="email" value="<%= me.username %>" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="btn-row">
+                            <button type="submit" class="btn btn-secondary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-header">Change Password</div>
+                <div class="card-body">
+                    <form id="passwordForm">
+                        <div class="form-grid">
+                            <div class="form-row form-row-2">
+                                <div class="form-group">
+                                    <label for="currentPassword">Current Password</label>
+                                    <input id="currentPassword" name="currentPassword" type="password" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="newPassword">New Password</label>
+                                    <input id="newPassword" name="newPassword" type="password" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="btn-row">
+                            <button type="submit" class="btn btn-primary">Update Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="uploads-header">
+                        <div class="uploads-title">Your uploads</div>
+                    </div>
+                </div>
+                <div class="card-body scrollable">
+                    <% if (notes && notes.length) { %>
+                        <div class="uploads-grid">
+                            <% notes.forEach(n => { %>
+                                <div class="upload-card">
+                                    <div class="thumb-wrap">
+                                        <canvas class="thumb-canvas" data-id="<%= n._id %>"></canvas>
+                                    </div>
+                                    <div class="upload-meta"><span><i class="fas fa-file-pdf"></i> PDF</span><span><i class="fas fa-calendar"></i> <%= new Date(n.uploadedAt).toLocaleDateString() %></span></div>
+                                    <h4><%= n.title %></h4>
+                                    <div class="upload-actions">
+                                        <a class="action-btn action-view" href="/view/<%= n._id %>"><i class="fas fa-eye"></i> View</a>
+                                        <a class="action-btn action-download" href="/download/<%= n._id %>"><i class="fas fa-download"></i> Download</a>
+                                        <button class="action-btn action-delete" data-delete id="del-<%= n._id %>" data-id="<%= n._id %>"><i class="fas fa-trash"></i> Delete</button>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        </div>
+                    <% } else { %>
+                        <p style="color:#64748b;">You haven't uploaded anything yet.</p>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        }
+    </script>
+    <script>
+        function showToast(msg, type){ alert(msg); }
+        const profileForm = document.getElementById('profileForm');
+        if (profileForm) profileForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            const body = new URLSearchParams(new FormData(profileForm));
+            fetch('/profile', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body })
+                .then(async r=>{ const t=await r.text(); if(!r.ok) throw new Error(t||'Failed'); return t; })
+                .then(()=>{ showToast('Profile updated','success'); window.location.reload(); })
+                .catch(err=> showToast(err.message||'Update failed','error'));
+        });
+        const passwordForm = document.getElementById('passwordForm');
+        if (passwordForm) passwordForm.addEventListener('submit', function(e){
+            e.preventDefault();
+            const body = new URLSearchParams(new FormData(passwordForm));
+            fetch('/profile/password', { method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'}, body })
+                .then(async r=>{ const t=await r.text(); if(!r.ok) throw new Error(t||'Failed'); return t; })
+                .then(()=>{ showToast('Password updated','success'); passwordForm.reset(); })
+                .catch(err=> showToast(err.message||'Password update failed','error'));
+        });
+
+        // Delete upload handling
+        document.addEventListener('click', function(e){
+            const btn = e.target.closest('[data-delete]');
+            if (!btn) return;
+            const id = btn.getAttribute('data-id');
+            if (!id) return;
+            if (!confirm('Delete this upload permanently?')) return;
+            fetch(`/uploads/${id}`, { method: 'DELETE' })
+              .then(async r => { const t = await r.text(); if (!r.ok) throw new Error(t||'Failed'); return t; })
+              .then(() => { showToast('Deleted','success'); btn.closest('.upload-card').remove(); })
+              .catch(err => showToast(err.message||'Delete failed','error'));
+        });
+
+        // Render half-page preview thumbnails
+        document.addEventListener('DOMContentLoaded', function(){
+            const canvases = document.querySelectorAll('.thumb-canvas');
+            canvases.forEach((canvas) => {
+                const id = canvas.getAttribute('data-id');
+                if (!id) return;
+                const url = `/download/${id}`;
+                fetch(url)
+                  .then(res => { if(!res.ok) throw new Error('Failed'); return res.arrayBuffer(); })
+                  .then(data => pdfjsLib.getDocument({ data }).promise)
+                  .then(pdf => pdf.getPage(1))
+                  .then(page => {
+                      const desiredWidth = 320;
+                      const viewport1x = page.getViewport({ scale: 1 });
+                      const scale = desiredWidth / viewport1x.width;
+                      const viewport = page.getViewport({ scale });
+                      const off = document.createElement('canvas');
+                      off.width = viewport.width;
+                      off.height = viewport.height;
+                      const offCtx = off.getContext('2d');
+                      page.render({ canvasContext: offCtx, viewport }).promise.then(() => {
+                          const ctx = canvas.getContext('2d');
+                          canvas.width = viewport.width;
+                          canvas.height = Math.floor(viewport.height / 2);
+                          ctx.drawImage(off, 0, 0, off.width, off.height / 2, 0, 0, canvas.width, canvas.height);
+                      });
+                  })
+                  .catch(() => {
+                      canvas.outerHTML = '<div style="padding:32px; text-align:center; color:#94a3b8;">Preview unavailable</div>';
+                  });
+            });
+        });
+    </script>
+</body>
+</html>
+

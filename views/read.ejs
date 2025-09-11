@@ -43,8 +43,20 @@
                 </li>
             </ul>
             <div class="nav-auth">
-                <button class="btn-auth btn-signin">Sign In</button>
-                <button class="btn-auth btn-signup">Sign Up</button>
+                <% if (user) { %>
+                    <div class="nav-profile">
+                        <a href="/profile" class="profile-link" title="Profile">
+                            <span class="avatar"><%= (user.name || user.username || 'U').charAt(0).toUpperCase() %></span>
+                            <span class="profile-name"><%= user.name || user.username %></span>
+                        </a>
+                        <form action="/logout" method="POST" style="display:inline">
+                            <button type="submit" class="btn-auth btn-signin">Logout</button>
+                        </form>
+                    </div>
+                <% } else { %>
+                    <button id="btnSignIn" class="btn-auth btn-signin" onclick="openAuthModal('login')">Sign In</button>
+                    <button id="btnSignUp" class="btn-auth btn-signup" onclick="openAuthModal('signup')">Sign Up</button>
+                <% } %>
             </div>
         </div>
     </nav>
@@ -82,14 +94,8 @@
                                 </span>
                             </div>
                             <div class="pdf-actions">
-                                <button class="btn btn-primary" onclick="viewPDF('<%= note._id %>')">
-                                    <i class="fas fa-eye"></i>
-                                    View
-                                </button>
-                                <button class="btn btn-secondary" onclick="downloadPDF('<%= note._id %>')">
-                                    <i class="fas fa-download"></i>
-                                    Download
-                                </button>
+                                <button class="btn btn-primary" style="border-radius:999px; font-weight:800;" onclick="viewPDF('<%= note._id %>')"><i class="fas fa-eye"></i> View</button>
+                                <button class="btn btn-secondary" style="border-radius:999px; font-weight:800;" onclick="downloadPDF('<%= note._id %>')"><i class="fas fa-download"></i> Download</button>
                             </div>
                         </div>
                     <% }) %>
@@ -113,6 +119,14 @@
     <!-- Footer removed on browse page by request -->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script>
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        }
+    </script>
+    <script>
+        window.isLoggedIn = <%- JSON.stringify(!!user) %>;
+    </script>
     <script src="/script.js"></script>
     <script>
         // Modal PDF viewer on this page
@@ -135,7 +149,10 @@
 
             const url = `/download/${id}`;
             fetch(url)
-                .then(res => res.arrayBuffer())
+                .then(res => {
+                    if (!res.ok) throw new Error('Failed to fetch');
+                    return res.arrayBuffer();
+                })
                 .then(data => pdfjsLib.getDocument({ data }).promise)
                 .then(pdf => {
                     container.innerHTML = '';
@@ -175,7 +192,7 @@
                 const id = canvas.getAttribute('data-id');
                 const url = `/download/${id}`;
                 fetch(url)
-                  .then(res => res.arrayBuffer())
+                  .then(res => { if(!res.ok) throw new Error('Failed'); return res.arrayBuffer(); })
                   .then(data => pdfjsLib.getDocument({ data }).promise)
                   .then(pdf => pdf.getPage(1))
                   .then(page => {

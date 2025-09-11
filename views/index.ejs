@@ -44,8 +44,20 @@
                 </li>
             </ul>
             <div class="nav-auth">
-                <button id="btnSignIn" class="btn-auth btn-signin" onclick="openAuthModal('login')">Sign In</button>
-                <button id="btnSignUp" class="btn-auth btn-signup" onclick="openAuthModal('signup')">Sign Up</button>
+                <% if (user) { %>
+                    <div class="nav-profile">
+                        <a href="/profile" class="profile-link" title="Profile">
+                            <span class="avatar"><%= (user.name || user.username || 'U').charAt(0).toUpperCase() %></span>
+                            <span class="profile-name"><%= user.name || user.username %></span>
+                        </a>
+                        <form action="/logout" method="POST" style="display:inline">
+                            <button type="submit" class="btn-auth btn-signin">Logout</button>
+                        </form>
+                    </div>
+                <% } else { %>
+                    <button id="btnSignIn" class="btn-auth btn-signin" onclick="openAuthModal('login')">Sign In</button>
+                    <button id="btnSignUp" class="btn-auth btn-signup" onclick="openAuthModal('signup')">Sign Up</button>
+                <% } %>
             </div>
         </div>
     </nav>
@@ -114,6 +126,10 @@
                     <button type="submit" class="btn btn-secondary" style="width:100%">Sign In</button>
                 </form>
                 <form id="signupForm" class="auth-form" style="display:none">
+                    <div class="form-group">
+                        <label for="signup-name">Full Name</label>
+                        <input id="signup-name" name="name" type="text" required>
+                    </div>
                     <div class="form-group">
                         <label for="signup-username">Email</label>
                         <input id="signup-username" name="username" type="email" required>
@@ -330,6 +346,10 @@
         </div>
     </footer>
 
+    <script>
+        // Expose server auth state for optional client checks
+        window.isLoggedIn = <%- JSON.stringify(!!user) %>;
+    </script>
     <script src="/script.js"></script>
     <script>
         // Additional functions for this page

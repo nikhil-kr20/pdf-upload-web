@@ -102,10 +102,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab('login'));
     if (tabSignup) tabSignup.addEventListener('click', () => switchAuthTab('signup'));
 
-    // In-memory auth flag (resets on refresh/server restart)
-    let isLoggedIn = false;
+    // Respect server-provided auth flag if present
+    let isLoggedIn = typeof window !== 'undefined' && typeof window.isLoggedIn === 'boolean' ? window.isLoggedIn : false;
     let loggedInUsername = null;
-    try { window.isLoggedIn = isLoggedIn; } catch {}
 
     // Submit handlers → server.js uses urlencoded; send FormData
     if (loginForm) loginForm.addEventListener('submit', function(e){
@@ -121,13 +120,8 @@ document.addEventListener('DOMContentLoaded', function() {
             return txt;
           })
           .then(() => {
-            showNotification('Logged in successfully', 'success');
-            // Set in-memory auth state only (not persisted)
-            isLoggedIn = true;
-            loggedInUsername = fd.get('username');
-            try { window.isLoggedIn = isLoggedIn; } catch {}
-            updateNavbarAuth();
-            closeAuth();
+            // Use server session state; reload to get server-rendered UI
+            window.location.reload();
           })
           .catch(err => {
             if (authError) { authError.textContent = err.message || 'Login failed'; authError.style.display = 'block'; }
@@ -147,41 +141,20 @@ document.addEventListener('DOMContentLoaded', function() {
             return txt;
           })
           .then(() => {
-            showNotification('Registration successful', 'success');
-            isLoggedIn = true;
-            loggedInUsername = fd.get('username');
-            try { window.isLoggedIn = isLoggedIn; } catch {}
-            updateNavbarAuth();
-            closeAuth();
+            // Use server session state; reload to get server-rendered UI
+            window.location.reload();
           })
           .catch(err => {
             if (authError) { authError.textContent = err.message || 'Registration failed'; authError.style.display = 'block'; }
           });
     });
 
-    // Navbar auth state handling (client-only)
-    function updateNavbarAuth() {
-        const navAuth = document.querySelector('.nav-auth');
-        if (!navAuth) return;
-        if (isLoggedIn) {
-            navAuth.innerHTML = '<button id="btnLogout" class="btn-auth btn-signin">Logout</button>';
-            const logoutBtn = document.getElementById('btnLogout');
-            if (logoutBtn) logoutBtn.addEventListener('click', () => { isLoggedIn = false; loggedInUsername = null; try { window.isLoggedIn = isLoggedIn; } catch {}; updateNavbarAuth(); showNotification('Logged out', 'success'); });
-        } else {
-            navAuth.innerHTML = '<button id="btnSignIn" class="btn-auth btn-signin">Sign In</button> <button id="btnSignUp" class="btn-auth btn-signup">Sign Up</button>';
-            const si = document.getElementById('btnSignIn');
-            const su = document.getElementById('btnSignUp');
-            if (si) si.addEventListener('click', () => openAuth('login'));
-            if (su) su.addEventListener('click', () => openAuth('signup'));
-        }
-    }
+    // Navbar auth state now server-rendered; no client swapping
+    function updateNavbarAuth() {}
 
     function escapeHtml(str){ return String(str).replace(/[&<>"]+/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[s])); }
 
-    // Initialize as logged out on each load
-    isLoggedIn = false;
-    loggedInUsername = null;
-    try { window.isLoggedIn = isLoggedIn; } catch {}
+    // Do not override server auth state
     updateNavbarAuth();
 });
 
@@ -248,8 +221,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadForm = document.querySelector('#upload-form');
     if (uploadForm) {
         uploadForm.addEventListener('submit', function(e) {
-            // Block if not logged in
-            if (!isLoggedIn) {
+            // Server will enforce auth; optionally prompt client-side if known
+            if (typeof window !== 'undefined' && window.isLoggedIn === false) {
                 e.preventDefault();
                 showNotification('Please sign in to upload notes', 'warning');
                 openAuth('login');

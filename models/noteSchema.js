@@ -14,6 +14,10 @@ const noteSchema = new mongoose.Schema({
     type: String, // e.g., 'application/pdf'
     required: true,
   },
+  userId: {
+    type: String, // store user id string for simplicity
+    required: false,
+  },
   uploadedAt: {
     type: Date,
     default: Date.now,
