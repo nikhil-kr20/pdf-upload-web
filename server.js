@@ -6,6 +6,7 @@ const cloudinary = require('cloudinary').v2;
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
 require('dotenv').config();
 
 const app = express();
@@ -18,6 +19,55 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+// ======================
+// Email Transporter
+// ======================
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
+    }
+});
+
+// In-memory store for OTPs (in production, use Redis or database)
+const otpStore = new Map();
+
+// Generate random 6-digit OTP
+function generateOTP() {
+    return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send OTP email
+async function sendOTP(email, otp) {
+    const mailOptions = {
+        from: `"Cloud Notes" <${process.env.GMAIL_USER}>`,
+        to: email,
+        subject: 'Your OTP for Cloud Notes Signup',
+        html: `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                <h2 style="color: #4f46e5;">Verify Your Email</h2>
+                <p>Your OTP for Cloud Notes signup is:</p>
+                <div style="background: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0;">
+                    <span style="font-size: 28px; font-weight: bold; letter-spacing: 5px; color: #111827;">${otp}</span>
+                </div>
+                <p>This OTP is valid for 5 minutes.</p>
+                <p>If you didn't request this, please ignore this email.</p>
+                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                <p style="color: #6b7280; font-size: 14px;">This is an automated message, please do not reply.</p>
+            </div>
+        `
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        return true;
+    } catch (error) {
+        console.error('Error sending OTP email:', error);
+        return false;
+    }
+}
 
 // ======================
 // Middleware & Config
@@ -96,6 +146,90 @@ app.post('/logout', (req, res) => {
     res.clearCookie('connect.sid');
     res.redirect('/');
   });
+});
+
+// ======================
+// OTP Endpoints
+// ======================
+
+// Send OTP to email
+app.post('/api/send-otp', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email is required' });
+        }
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ username: email });
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: 'User already exists' });
+        }
+
+        // Generate and store OTP
+        const otp = generateOTP();
+        otpStore.set(email, {
+            otp,
+            expiresAt: Date.now() + 300000, // 5 minutes
+            verified: false
+        });
+
+        // Send OTP via email
+        const emailSent = await sendOTP(email, otp);
+        if (!emailSent) {
+            return res.status(500).json({ success: false, message: 'Failed to send OTP' });
+        }
+
+        res.json({ success: true, message: 'OTP sent successfully' });
+    } catch (error) {
+        console.error('Error sending OTP:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+});
+
+// Verify OTP
+app.post('/api/verify-otp', (req, res) => {
+    try {
+        const { email, otp } = req.body;
+        
+        if (!email || !otp) {
+            return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+        }
+
+        const otpData = otpStore.get(email);
+        
+        // Check if OTP exists
+        if (!otpData) {
+            return res.status(400).json({ success: false, message: 'No OTP found for this email. Please request a new OTP.' });
+        }
+
+        // Check if OTP is expired
+        if (otpData.expiresAt < Date.now()) {
+            otpStore.delete(email); // Clean up expired OTP
+            return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+        }
+
+        // Check if OTP matches
+        if (otpData.otp !== otp) {
+            return res.status(400).json({ success: false, message: 'Invalid OTP. Please try again.' });
+        }
+
+        // Mark as verified
+        otpData.verified = true;
+        otpStore.set(email, otpData);
+
+        res.json({ 
+            success: true, 
+            message: 'OTP verified successfully',
+            data: {
+                emailVerified: true
+            }
+        });
+    } catch (error) {
+        console.error('Error verifying OTP:', error);
+        res.status(500).json({ success: false, message: 'Internal server error' });
+    }
 });
 
 // ======================
