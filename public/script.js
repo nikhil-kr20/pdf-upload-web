@@ -156,6 +156,146 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Do not override server auth state
     updateNavbarAuth();
+    
+    // Intercept username clicks on browse cards → open modal with that user's uploads
+    document.body.addEventListener('click', async function(e){
+        const link = e.target.closest('.chip-user');
+        if (!link) return;
+        // Intercept only if it looks like a user link
+        if (link.matches('a.chip-user')) e.preventDefault();
+        try {
+            // Prefer visible chip text to avoid malformed URLs (%40 etc.)
+            const username = (link.textContent || '').trim();
+            const resp = await fetch(`/api/notes/by-uploader?name=${encodeURIComponent(username)}`, { headers: { 'Accept': 'application/json' } });
+            const ct = resp.headers.get('content-type') || '';
+            const data = ct.includes('application/json') ? await resp.json() : { success: false, message: await resp.text() };
+            if (!resp.ok || data.success === false) throw new Error(data.message || 'Failed to load');
+
+            const grid = document.createElement('div');
+            grid.style.display = 'grid';
+            grid.style.gridTemplateColumns = 'repeat(3, minmax(260px, 1fr))';
+            grid.style.gap = '24px';
+
+            if (!data.notes || !data.notes.length) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align:center; color:#6b7280; padding:24px;">No uploads yet</div>';
+            } else {
+                data.notes.forEach((note) => {
+                    const card = document.createElement('div');
+                    card.className = 'pdf-card';
+                    card.style.background = '#ffffff';
+                    card.style.borderRadius = '18px';
+                    card.style.padding = '16px';
+                    card.style.boxShadow = '0 4px 15px rgba(0,0,0,0.08)';
+                    card.style.border = '1px solid rgba(15, 23, 42, 0.06)';
+                    card.style.textAlign = 'center';
+
+                    const thumbWrap = document.createElement('div');
+                    thumbWrap.className = 'thumb-wrap';
+                    thumbWrap.style.borderRadius = '16px';
+                    thumbWrap.style.overflow = 'hidden';
+                    thumbWrap.style.background = '#0f172a';
+                    thumbWrap.style.marginBottom = '1rem';
+
+                    const canvas = document.createElement('canvas');
+                    canvas.className = 'thumb-canvas';
+                    // Can't easily stream via API result; reuse direct fileUrl for preview fetch
+                    canvas.dataset.url = note.fileUrl;
+                    thumbWrap.appendChild(canvas);
+
+                    const h3 = document.createElement('h3');
+                    h3.textContent = note.title;
+                    h3.style.margin = '8px 0 6px';
+                    h3.style.color = '#0f172a';
+                    h3.style.fontWeight = '700';
+                    h3.style.fontSize = '1.05rem';
+
+                    const meta = document.createElement('div');
+                    meta.className = 'pdf-meta';
+                    meta.style.display = 'flex';
+                    meta.style.justifyContent = 'center';
+                    meta.style.gap = '10px';
+                    meta.style.margin = '10px 0 14px';
+
+                    const dateChip = document.createElement('span');
+                    dateChip.className = 'chip chip-date';
+                    dateChip.style.background = '#f1f5f9';
+                    dateChip.style.color = '#0f172a';
+                    dateChip.style.padding = '6px 10px';
+                    dateChip.style.borderRadius = '999px';
+                    dateChip.style.fontSize = '.85rem';
+                    dateChip.innerHTML = `<i class="fas fa-calendar-alt"></i> ${new Date(note.uploadedAt).toLocaleDateString()}`;
+                    meta.appendChild(dateChip);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'pdf-actions';
+                    actions.style.display = 'flex';
+                    actions.style.justifyContent = 'center';
+                    actions.style.gap = '.75rem';
+
+                    const viewBtn = document.createElement('button');
+                    viewBtn.className = 'btn btn-primary';
+                    viewBtn.style.borderRadius = '999px';
+                    viewBtn.style.fontWeight = '800';
+                    viewBtn.innerHTML = '<i class="fas fa-eye"></i> View';
+                    viewBtn.addEventListener('click', () => {
+                        window.location.href = note.fileUrl; // or open /view with an id if provided
+                    });
+
+                    const downloadBtn = document.createElement('button');
+                    downloadBtn.className = 'btn btn-secondary';
+                    downloadBtn.style.borderRadius = '999px';
+                    downloadBtn.style.fontWeight = '800';
+                    downloadBtn.innerHTML = '<i class="fas fa-download"></i> Download';
+                    downloadBtn.addEventListener('click', () => {
+                        window.open(note.fileUrl, '_blank');
+                    });
+
+                    actions.appendChild(viewBtn);
+                    actions.appendChild(downloadBtn);
+
+                    card.appendChild(thumbWrap);
+                    card.appendChild(h3);
+                    card.appendChild(meta);
+                    card.appendChild(actions);
+                    grid.appendChild(card);
+                });
+            }
+
+            showModal(`Uploads by ${username}`, grid, [{ label: 'Close', variant: 'primary' }]);
+
+            // Render thumbnails using fileUrl
+            const canvases = grid.querySelectorAll('.thumb-canvas');
+            if (window.pdfjsLib) {
+                canvases.forEach(async (canvas) => {
+                    const url = canvas.dataset.url;
+                    try {
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error('Fetch failed');
+                        const data = await res.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument({ data }).promise;
+                        const page = await pdf.getPage(1);
+                        const desiredWidth = 320;
+                        const viewport1x = page.getViewport({ scale: 1 });
+                        const scale = desiredWidth / viewport1x.width;
+                        const viewport = page.getViewport({ scale });
+                        const off = document.createElement('canvas');
+                        off.width = viewport.width;
+                        off.height = viewport.height;
+                        const offCtx = off.getContext('2d');
+                        await page.render({ canvasContext: offCtx, viewport }).promise;
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = viewport.width;
+                        canvas.height = Math.floor(viewport.height / 2);
+                        ctx.drawImage(off, 0, 0, off.width, off.height / 2, 0, 0, canvas.width, canvas.height);
+                    } catch (e) {
+                        canvas.outerHTML = '<div class="thumb-fallback">Preview unavailable</div>';
+                    }
+                });
+            }
+        } catch (err) {
+            showNotification(err.message || 'Failed to load uploads', 'error');
+        }
+    });
 });
 
 // Upload Notes function

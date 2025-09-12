@@ -346,10 +346,11 @@
         </div>
     </footer>
 
-    <script>
-        // Expose server auth state for optional client checks
-        window.isLoggedIn = <%- JSON.stringify(!!user) %>;
-    </script>
+   <script>
+    // Expose server auth state for optional client checks
+    window.isLoggedIn = <%= JSON.stringify(!!user) %>;
+</script>
+
     <script src="/script.js"></script>
     <script>
         // Additional functions for this page

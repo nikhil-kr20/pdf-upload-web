@@ -61,6 +61,7 @@
         </div>
     </nav>
 
+
     <!-- PDF List Section -->
     <section class="pdf-list-section" style="background: url('/hero1.png') center/cover no-repeat;">
         <div class="pdf-list-container">
@@ -84,14 +85,14 @@
                             </div>
                             <h3><%= note.title %></h3>
                             <div class="pdf-meta">
-                                <span class="pdf-type">
-                                    <i class="fas fa-file"></i>
-                                    PDF Document
+                                <span class="chip chip-date" title="Upload date">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <%= new Date(note.uploadedAt || note._id.getTimestamp()).toLocaleDateString() %>
                                 </span>
-                                <span class="pdf-date">
-                                    <i class="fas fa-calendar"></i>
-                                    <%= new Date(note._id.getTimestamp()).toLocaleDateString() %>
-                                </span>
+                                <a class="chip chip-user" href="/user/<%= encodeURIComponent((note.uploader && note.uploader.username) || note.uploaderName || 'unknown') %>">
+                                    <i class="fas fa-user"></i>
+                                    <%= note.uploaderName || (note.uploader && (note.uploader.name || note.uploader.username)) || 'Unknown' %>
+                                </a>
                             </div>
                             <div class="pdf-actions">
                                 <button class="btn btn-primary" style="border-radius:999px; font-weight:800;" onclick="viewPDF('<%= note._id %>')"><i class="fas fa-eye"></i> View</button>
@@ -124,7 +125,8 @@
             pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
         }
     </script>
-        window.isLoggedIn = <%= JSON.stringify(!!user) %> ;
+   <script> window.isLoggedIn = <%- JSON.stringify(!!user) %>; </script>
+        
     <script src="/script.js"></script>
     <script>
         // Modal PDF viewer on this page
@@ -276,24 +278,13 @@
             text-align: center;
         }
         
-        .pdf-meta {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 1rem 0;
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-        
-        .pdf-meta span {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .pdf-meta i {
-            font-size: 0.8rem;
-        }
+        .pdf-meta { display:flex; justify-content:center; gap: 10px; margin: 10px 0 14px; }
+        .chip { display:inline-flex; align-items:center; gap:.5rem; padding:6px 10px; border-radius:999px; font-size:.85rem; }
+        .chip i { font-size: 0.8rem; }
+        .chip-type { background:#eef2ff; color:#3730a3; }
+        .chip-date { background:#f1f5f9; color:#0f172a; }
+        .chip-user { background:#ecfeff; color:#0e7490; text-decoration:none; }
+        .chip-user:hover { background:#cffafe; color:#155e75; }
         
         .empty-state {
             text-align: center;
@@ -356,7 +347,6 @@
         }
         .pdf-card h3 { margin: 8px 0 6px; color:#0f172a; font-weight: 700; font-size: 1.05rem; }
         .pdf-meta { justify-content:center; gap: 10px; }
-        .pdf-meta .pdf-type, .pdf-meta .pdf-date { background:#f8fafc; padding:6px 10px; border-radius:999px; }
         .pdf-actions { display:flex; justify-content:center; gap: .75rem; }
 
         /* Center contents with generous side padding and max width */

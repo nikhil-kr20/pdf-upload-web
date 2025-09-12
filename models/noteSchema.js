@@ -14,9 +14,15 @@ const noteSchema = new mongoose.Schema({
     type: String, // e.g., 'application/pdf'
     required: true,
   },
-  userId: {
-    type: String, // store user id string for simplicity
-    required: false,
+  uploader: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'UserLogin',
+    required: true,
+  },
+  uploaderName: {
+    type: String,
+    required: true,
+    trim: true,
   },
   uploadedAt: {
     type: Date,

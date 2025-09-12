@@ -178,7 +178,8 @@ app.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
       title: req.body.title || req.file.originalname,
       fileUrl: result.secure_url,
       fileType: req.file.mimetype,
-      userId: req.session.user && req.session.user.id ? req.session.user.id : undefined,
+      uploader: req.session.user.id,
+      uploaderName: req.session.user.name || req.session.user.username,
     });
     await newNote.save();
 
@@ -198,11 +199,74 @@ app.post('/upload', requireAuth, upload.single('file'), async (req, res) => {
 // ======================
 app.get('/read', async (req, res) => {
   try {
-    const notes = await Note.find();
-    res.render('read', { notes, user: req.user || null });
+    const notes = await Note.find()
+      .populate({ path: 'uploader', model: User, select: 'name username' })
+      .sort({ uploadedAt: -1 });
+    // Do not override `user`; it's already exposed via res.locals from the session middleware
+    res.render('read', { notes });
   } catch (err) {
     console.error('Read error:', err);
     res.status(500).send('Error reading files');
+  }
+});
+
+// ======================
+// User uploads by username
+// ======================
+app.get('/user/:username', async (req, res) => {
+  try {
+    const { username } = req.params;
+    if (!username) return res.status(400).send('Username required');
+
+    // Try to find actual user by username (email/handle)
+    const userDoc = await User.findOne({ username }).select('name username');
+
+    let query = {};
+    if (userDoc) {
+      // Match either by ObjectId reference or by stored name/username string
+      query = {
+        $or: [
+          { uploader: userDoc._id },
+          { uploaderName: userDoc.username },
+          { uploaderName: userDoc.name }
+        ]
+      };
+    } else {
+      // Fallback: match by uploaderName equals the provided param (supports name or username in URL)
+      query = { uploaderName: username };
+    }
+
+    const notes = await Note.find(query).sort({ uploadedAt: -1 });
+
+    const displayName = userDoc ? (userDoc.name || userDoc.username) : username;
+    return res.render('userUploads', { username: displayName, notes, user: req.session.user || null });
+  } catch (err) {
+    console.error('User uploads error:', err);
+    res.status(500).send('Failed to load user uploads');
+  }
+});
+
+// ======================
+// API: Notes by uploader (username or display name)
+// ======================
+app.get('/api/notes/by-uploader', async (req, res) => {
+  try {
+    const name = (req.query.name || '').trim();
+    if (!name) return res.status(400).json({ success: false, message: 'Missing name' });
+
+    const userDoc = await User.findOne({ username: name }).select('_id name username');
+    const query = userDoc
+      ? { $or: [{ uploader: userDoc._id }, { uploaderName: userDoc.username }, { uploaderName: userDoc.name }] }
+      : { uploaderName: name };
+
+    const notes = await Note.find(query)
+      .sort({ uploadedAt: -1 })
+      .select('title fileUrl fileType uploadedAt');
+
+    res.json({ success: true, notes });
+  } catch (err) {
+    console.error('API by-uploader error:', err);
+    res.status(500).json({ success: false, message: 'Failed to load notes' });
   }
 });
 
@@ -218,7 +282,7 @@ app.get('/view/:id', async (req, res) => {
       return res.status(400).send('Invalid file ID');
     }
 
-    const note = await Note.findById(id);
+    const note = await Note.findById(id).populate({ path: 'uploader', model: User, select: 'name username' });
     if (!note) return res.status(404).send('File not found');
 
     // Render viewer page with EJS (nicer experience)
@@ -303,7 +367,7 @@ app.get('/profile', async (req, res) => {
   if (!req.session.user) return res.redirect('/');
   try {
     const me = await User.findById(req.session.user.id);
-    const myNotes = await Note.find({ userId: req.session.user.id }).sort({ uploadedAt: -1 });
+    const myNotes = await Note.find({ uploader: req.session.user.id }).sort({ uploadedAt: -1 });
     res.render('profile', { me, notes: myNotes });
   } catch (err) {
     console.error('Profile error:', err);
@@ -358,7 +422,7 @@ app.delete('/uploads/:id', requireAuth, async (req, res) => {
     }
     const note = await Note.findById(id);
     if (!note) return res.status(404).send('File not found');
-    if (!note.userId || String(note.userId) !== String(req.session.user.id)) {
+    if (!note.uploader || String(note.uploader) !== String(req.session.user.id)) {
       return res.status(403).send('Not allowed');
     }
     await Note.deleteOne({ _id: id });
