@@ -482,20 +482,222 @@
     <!-- Contact Section -->
     <!-- Contact Section -->
     <section id="contact" class="contact-section">
-        <div class="container">
-            <h2>Contact Us</h2>
-            <p>Have questions or feedback? We'd love to hear from you!</p>
-            
-            <div class="contact-form">
-                <h3>Send us a message</h3>
-                <form class="contact-form-fields" action="/send-feedback" method="post">
-                    <textarea name="message" placeholder="Your Message" rows="4" required></textarea>
-                    <button type="submit" class="btn btn-primary">Send Message</button>
-                </form>
+        <div class="contact-container">
+            <div class="contact-card">
+                <div class="contact-header">
+                    <h2>Get in Touch</h2>
+                    <p>Have questions or feedback? We'd love to hear from you!</p>
+                </div>
+                
+                <div class="contact-content">
+                    <% if (typeof user === 'undefined' || !user) { %>
+                        <div class="login-prompt">
+                            <i class="fas fa-info-circle"></i>
+                            <p>Please <a href="/login?redirect=/#contact" class="login-link">login</a> to send us a message.</p>
+                        </div>
+                    <% } else { %>
+                        <form class="contact-form" action="/send-feedback" method="post" id="feedbackForm">
+                            <div class="form-group">
+                                <label for="feedbackMessage">Your Message</label>
+                                <textarea name="message" id="feedbackMessage" placeholder="Type your message here..." rows="7" required></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="btn-send">
+                                    <i class="fas fa-paper-plane"></i> Send Message
+                                </button>
+                            </div>
+                        </form>
+                    <% } %>
+                </div>
             </div>
         </div>
     </section>
-<!--hi-->
+
+    <style>
+        .contact-section {
+            padding: 80px 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 70vh;
+            display: flex;
+            align-items: center;
+        }
+        
+        .contact-container {
+            max-width: 700px;
+            width: 90%;
+            margin: 0 auto;
+        }
+        
+        .contact-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            padding: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .contact-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 8px;
+            background: linear-gradient(90deg, #2e7d32, #4caf50);
+        }
+        
+        .contact-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .contact-header h2 {
+            color: #2e7d32;
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .contact-header p {
+            color: #6c757d;
+            font-size: 1.05rem;
+            line-height: 1.6;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 15px 20px;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f8f9fa;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #4caf50;
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+            background: white;
+        }
+        
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .form-actions {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .btn-send {
+            background: #2e7d32;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
+        }
+        
+        .btn-send:hover {
+            background: #1b5e20;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
+        }
+        
+        .login-prompt {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+            padding: 15px 20px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .login-prompt i {
+            color: #2e7d32;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        
+        .login-prompt p {
+            margin: 0;
+            color: #2e7d32;
+        }
+        
+        .login-link {
+            color: #1b5e20;
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        
+        .login-link:hover {
+            color: #003300;
+            text-decoration: underline;
+        }
+        
+        @media (max-width: 768px) {
+            .contact-card {
+                padding: 30px 25px;
+            }
+            
+            .contact-header h2 {
+                font-size: 1.8rem;
+            }
+            
+            .btn-send {
+                width: 100%;
+                justify-content: center;
+                padding: 15px 20px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .contact-section {
+                padding: 50px 0;
+            }
+            
+            .contact-card {
+                padding: 25px 20px;
+                border-radius: 12px;
+            }
+            
+            .contact-header h2 {
+                font-size: 1.6rem;
+            }
+            
+            .contact-header p {
+                font-size: 1rem;
+            }
+        }
+    </style>
     <!-- Footer -->
     <footer class="footer">
         <div class="container">
@@ -911,5 +1113,35 @@
             }
         });
     </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const feedbackForm = document.getElementById('feedbackForm');
+            const feedbackMessage = document.getElementById('feedbackMessage');
+            
+            // Check for URL parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const feedbackStatus = urlParams.get('feedback');
+            const feedbackMsg = urlParams.get('message');
+            
+            // Show feedback message if any
+            if (feedbackStatus === 'error' && feedbackMsg) {
+                showNotification(feedbackMsg, 'error');
+            } else if (feedbackStatus === 'success') {
+                showNotification('Thank you for your feedback!', 'success');
+            }
+            
+            // Handle form submission
+            if (feedbackForm) {
+                feedbackForm.addEventListener('submit', function(e) {
+                    const message = feedbackMessage.value.trim();
+                    if (!message) {
+                        e.preventDefault();
+                        showNotification('Please enter a message', 'error');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
+    
