@@ -98,15 +98,81 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnSignIn) btnSignIn.addEventListener('click', () => openAuth('login'));
     if (btnSignUp) btnSignUp.addEventListener('click', () => openAuth('signup'));
     if (authClose) authClose.addEventListener('click', closeAuth);
-    if (authModal) authModal.addEventListener('click', (e) => { if (e.target === authModal) closeAuth(); });
-    if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab('login'));
-    if (tabSignup) tabSignup.addEventListener('click', () => switchAuthTab('signup'));
 
-    // Respect server-provided auth flag if present
-    let isLoggedIn = typeof window !== 'undefined' && typeof window.isLoggedIn === 'boolean' ? window.isLoggedIn : false;
-    let loggedInUsername = null;
+    // Handle signup form submission
+    if (signupForm) {
+        signupForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('signup-name').value.trim();
+            const email = document.getElementById('signup-username').value.trim();
+            const password = document.getElementById('signup-password').value;
+            
+            // Basic validation
+            if (!name || !email || !password) {
+                showNotification('All fields are required', 'error');
+                return;
+            }
 
-    // Submit handlers → server.js uses urlencoded; send FormData
+            // Check if OTP is verified using sessionStorage
+            const isOtpVerified = sessionStorage.getItem(`otp_verified_${email}`) === 'true';
+            if (!isOtpVerified) {
+                showNotification('Please verify your email with OTP first', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        username: email,
+                        password: password
+                    })
+                });
+
+                if (response.ok) {
+                    // Clear OTP verification status after successful registration
+                    sessionStorage.removeItem(`otp_verified_${email}`);
+                    
+                    showNotification('Registration successful!', 'success');
+                    closeAuth();
+                    
+                    // Update the UI to show logged-in state
+                    const navAuth = document.querySelector('.nav-auth');
+                    if (navAuth) {
+                        navAuth.innerHTML = `
+                            <div class="nav-profile">
+                                <a href="/profile" class="profile-link" title="Profile">
+                                    <span class="avatar">${name.charAt(0).toUpperCase()}</span>
+                                    <span class="profile-name">${name}</span>
+                                </a>
+                                <form action="/logout" method="POST" style="display:inline">
+                                    <button type="submit" class="btn-auth btn-signin">Logout</button>
+                                </form>
+                            </div>
+                        `;
+                    }
+                    
+                    // Redirect to home page after a short delay
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
+                } else {
+                    const errorText = await response.text();
+                    showNotification(errorText || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showNotification('An error occurred during registration', 'error');
+            }
+        });
+    }
+
+    // Handle login form submission
     if (loginForm) loginForm.addEventListener('submit', function(e){
         e.preventDefault();
         if (authError) { authError.style.display = 'none'; authError.textContent = ''; }
@@ -125,27 +191,6 @@ document.addEventListener('DOMContentLoaded', function() {
           })
           .catch(err => {
             if (authError) { authError.textContent = err.message || 'Login failed'; authError.style.display = 'block'; }
-          });
-    });
-
-    if (signupForm) signupForm.addEventListener('submit', function(e){
-        e.preventDefault();
-        if (authError) { authError.style.display = 'none'; authError.textContent = ''; }
-        const fd = new FormData(signupForm);
-        const body = new URLSearchParams();
-        for (const [k, v] of fd.entries()) body.append(k, v);
-        fetch('/register', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body })
-          .then(async (res) => {
-            const txt = await res.text();
-            if (!res.ok) throw new Error(txt || 'Registration failed');
-            return txt;
-          })
-          .then(() => {
-            // Use server session state; reload to get server-rendered UI
-            window.location.reload();
-          })
-          .catch(err => {
-            if (authError) { authError.textContent = err.message || 'Registration failed'; authError.style.display = 'block'; }
           });
     });
 
