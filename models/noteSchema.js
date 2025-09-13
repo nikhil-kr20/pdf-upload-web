@@ -22,12 +22,11 @@ const noteSchema = new mongoose.Schema({
   uploaderName: {
     type: String,
     required: true,
-    trim: true,
   },
   uploadedAt: {
     type: Date,
     default: Date.now,
-  }
+  },
 });
 
 module.exports = noteSchema;

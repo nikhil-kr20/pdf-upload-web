@@ -540,6 +540,25 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Check for feedback parameter in URL
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const feedback = params.get('feedback');
+
+    if (feedback) {
+        if (feedback === 'success') {
+            showNotification('Feedback sent successfully!', 'success');
+        } else if (feedback === 'error') {
+            showNotification('Failed to send feedback. Please try again later.', 'error');
+        }
+
+        // Remove feedback param from URL without reloading
+        params.delete('feedback');
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.replaceState({}, '', newUrl);
+    }
+});
+
 // Notification system
 function showNotification(message, type = 'info') {
     // Remove existing notifications
