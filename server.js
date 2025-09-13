@@ -1,95 +1,66 @@
+require('dotenv').config();
 const express = require('express');
-const multer = require('multer');
 const mongoose = require('mongoose');
 const path = require('path');
-const cloudinary = require('cloudinary').v2;
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
+const { v2: cloudinary } = require('cloudinary');
+const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
-require('dotenv').config();
 
+// Nodemailer transporter setup
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD
+  },
+});
+
+// Import routes
+const authRoutes = require('./routes/authRoutes');
+const noteRoutes = require('./routes/noteRoutes');
+
+// Initialize Express app
 const app = express();
 
 // ======================
-// Cloudinary Configuration
+// Configuration
 // ======================
+
+// Cloudinary Configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// ======================
-// Email Transporter
-// ======================
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD
-    }
-});
-
-// In-memory store for OTPs (in production, use Redis or database)
-const otpStore = new Map();
-
-// Generate random 6-digit OTP
-function generateOTP() {
-    return Math.floor(100000 + Math.random() * 900000).toString();
-}
-
-// Send OTP email
-async function sendOTP(email, otp) {
-    const mailOptions = {
-        from: `"Cloud Notes" <${process.env.GMAIL_USER}>`,
-        to: email,
-        subject: 'Your OTP for Cloud Notes Signup',
-        html: `
-            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <h2 style="color: #4f46e5;">Verify Your Email</h2>
-                <p>Your OTP for Cloud Notes signup is:</p>
-                <div style="background: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0;">
-                    <span style="font-size: 28px; font-weight: bold; letter-spacing: 5px; color: #111827;">${otp}</span>
-                </div>
-                <p>This OTP is valid for 5 minutes.</p>
-                <p>If you didn't request this, please ignore this email.</p>
-                <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
-                <p style="color: #6b7280; font-size: 14px;">This is an automated message, please do not reply.</p>
-            </div>
-        `
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-        return true;
-    } catch (error) {
-        console.error('Error sending OTP email:', error);
-        return false;
-    }
-}
-
-// ======================
-// Middleware & Config
-// ======================
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// View Engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Sessions
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || 'change_this_secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 },
-    store: process.env.USER_DB_URI
-      ? MongoStore.create({ mongoUrl: process.env.USER_DB_URI })
-      : undefined,
-  })
-);
+// Session Configuration
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/cloud-notes',
+    collectionName: 'sessions'
+  }),
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  }
+}));
 
 // Expose user to views
 app.use((req, res, next) => {
@@ -98,16 +69,10 @@ app.use((req, res, next) => {
 });
 
 // ======================
-// Multer Setup - Memory storage
-// ======================
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-// ======================
-// MongoDB Connections
+// Database Connections
 // ======================
 
-// 1. PDF Database
+// PDF Database
 const pdfDB = mongoose.createConnection(process.env.PDF_DB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -115,10 +80,7 @@ const pdfDB = mongoose.createConnection(process.env.PDF_DB_URI, {
 pdfDB.on('connected', () => console.log('✅ Connected to PDF Database'));
 pdfDB.on('error', (err) => console.error('❌ PDF DB connection error:', err));
 
-const noteSchema = require('./models/noteSchema');
-const Note = pdfDB.model('Note', noteSchema);
-
-// 2. User Database
+// User Database
 const userDB = mongoose.createConnection(process.env.USER_DB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -126,19 +88,79 @@ const userDB = mongoose.createConnection(process.env.USER_DB_URI, {
 userDB.on('connected', () => console.log('✅ Connected to User Database'));
 userDB.on('error', (err) => console.error('❌ User DB connection error:', err));
 
+// Import schemas
+const noteSchema = require('./models/noteSchema');
 const userLoginSchema = require('./models/userlogin');
+
+// Create models using the connections
+const Note = pdfDB.model('Note', noteSchema);
 const User = userDB.model('UserLogin', userLoginSchema);
+
+// In-memory store for OTPs (in production, use Redis or database)
+const otpStore = new Map();
+
+// Generate random 6-digit OTP
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+// Send OTP email
+async function sendOTP(email, otp) {
+  console.log('Preparing to send OTP to:', email);
+  console.log('Using Gmail user:', process.env.GMAIL_USER);
+  
+  const mailOptions = {
+    from: `"Cloud Notes" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: 'Your OTP for Cloud Notes Signup',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4f46e5;">Verify Your Email</h2>
+        <p>Your OTP for Cloud Notes signup is:</p>
+        <div style="background: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0;">
+          <span style="font-size: 28px; font-weight: bold; letter-spacing: 5px; color: #111827;">${otp}</span>
+        </div>
+        <p>This OTP is valid for 5 minutes.</p>
+        <p>If you didn't request this, please ignore this email.</p>
+        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+        <p style="color: #6b7280; font-size: 14px;">This is an automated message, please do not reply.</p>
+      </div>
+    `
+  };
+
+  try {
+    console.log('Sending email...');
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Email sent successfully:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      stack: error.stack
+    });
+    return false;
+  }
+}
+
+// Multer Setup - Memory storage
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // ======================
 // Routes
 // ======================
 
-// Home
-app.get('/', (req, res) => res.render('index'));
+// API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/notes', noteRoutes);
 
-// Register/Login pages (simple text placeholders)
-app.get('/register', (req, res) => res.send('Register Page'));
-app.get('/login', (req, res) => res.send('Login Page'));
+// Web Routes
+app.get('/', (req, res) => {
+  res.render('index');
+});
+app.get('/register', (req, res) => res.render('register'));
+app.get('/login', (req, res) => res.render('login'));
 
 // Logout
 app.post('/logout', (req, res) => {
@@ -154,82 +176,106 @@ app.post('/logout', (req, res) => {
 
 // Send OTP to email
 app.post('/api/send-otp', async (req, res) => {
-    try {
-        const { email } = req.body;
-        
-        if (!email) {
-            return res.status(400).json({ success: false, message: 'Email is required' });
-        }
-
-        // Check if user already exists
-        const existingUser = await User.findOne({ username: email });
-        if (existingUser) {
-            return res.status(400).json({ success: false, message: 'User already exists' });
-        }
-
-        // Generate and store OTP
-        const otp = generateOTP();
-        otpStore.set(email, {
-            otp,
-            expiresAt: Date.now() + 300000, // 5 minutes
-            verified: false
-        });
-
-        // Send OTP via email
-        const emailSent = await sendOTP(email, otp);
-        if (!emailSent) {
-            return res.status(500).json({ success: false, message: 'Failed to send OTP' });
-        }
-
-        res.json({ success: true, message: 'OTP sent successfully' });
-    } catch (error) {
-        console.error('Error sending OTP:', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
+  try {
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Email is required' });
     }
+
+    // Check if user already exists
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      console.log('User already exists:', email);
+      return res.status(400).json({ success: false, message: 'User already exists' });
+    }
+
+    // Generate and store OTP
+    const otp = generateOTP();
+    otpStore.set(email, {
+      otp,
+      expiresAt: Date.now() + 300000, // 5 minutes
+      verified: false
+    });
+
+    console.log('Generated OTP for', email, ':', otp);
+
+    // Send OTP via email
+    console.log('Attempting to send OTP to:', email);
+    const emailSent = await sendOTP(email, otp);
+    
+    if (!emailSent) {
+      console.error('Failed to send OTP email to:', email);
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send OTP. Please try again later.' 
+      });
+    }
+
+    console.log('OTP sent successfully to:', email);
+    res.json({ 
+      success: true, 
+      message: 'OTP sent successfully',
+      // For development only - remove in production
+      debug: { otp }
+    });
+  } catch (error) {
+    console.error('Error in send-otp endpoint:', {
+      message: error.message,
+      stack: error.stack,
+      requestBody: req.body
+    });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Internal server error',
+      // For development only - remove in production
+      error: error.message
+    });
+  }
 });
 
 // Verify OTP
 app.post('/api/verify-otp', (req, res) => {
-    try {
-        const { email, otp } = req.body;
-        
-        if (!email || !otp) {
-            return res.status(400).json({ success: false, message: 'Email and OTP are required' });
-        }
-
-        const otpData = otpStore.get(email);
-        
-        // Check if OTP exists
-        if (!otpData) {
-            return res.status(400).json({ success: false, message: 'No OTP found for this email. Please request a new OTP.' });
-        }
-
-        // Check if OTP is expired
-        if (otpData.expiresAt < Date.now()) {
-            otpStore.delete(email); // Clean up expired OTP
-            return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
-        }
-
-        // Check if OTP matches
-        if (otpData.otp !== otp) {
-            return res.status(400).json({ success: false, message: 'Invalid OTP. Please try again.' });
-        }
-
-        // Mark as verified
-        otpData.verified = true;
-        otpStore.set(email, otpData);
-
-        res.json({ 
-            success: true, 
-            message: 'OTP verified successfully',
-            data: {
-                emailVerified: true
-            }
-        });
-    } catch (error) {
-        console.error('Error verifying OTP:', error);
-        res.status(500).json({ success: false, message: 'Internal server error' });
+  try {
+    const { email, otp } = req.body;
+    
+    if (!email || !otp) {
+      return res.status(400).json({ success: false, message: 'Email and OTP are required' });
     }
+
+    const otpData = otpStore.get(email);
+    
+    // Check if OTP exists
+    if (!otpData) {
+      return res.status(400).json({ success: false, message: 'No OTP found for this email. Please request a new OTP.' });
+    }
+
+    // Check if OTP is expired
+    if (otpData.expiresAt < Date.now()) {
+      otpStore.delete(email); // Clean up expired OTP
+      return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.' });
+    }
+
+    // Check if OTP matches
+    if (otpData.otp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP. Please try again.' });
+    }
+
+    // Mark as verified
+    otpData.verified = true;
+    otpStore.set(email, otpData);
+
+    res.json({ 
+      success: true, 
+      message: 'OTP verified successfully',
+      data: {
+        emailVerified: true
+      }
+    });
+  } catch (error) {
+    console.error('Error verifying OTP:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
 });
 
 // ======================
@@ -568,8 +614,82 @@ app.delete('/uploads/:id', requireAuth, async (req, res) => {
   }
 });
 
+// Feedback endpoint
+app.post('/send-feedback', async (req, res) => {
+    try {
+        const { message } = req.body;
+
+        if (!message || message.trim().length === 0) {
+            return res.redirect('/?feedback=error');
+        }
+
+        const userId = req.session.user?.id;
+        if (!userId) {
+            return res.redirect('/login?redirect=/&message=Please login to send feedback');
+        }
+
+        const user = await User.findById(userId).select('name username');
+        if (!user) {
+            return res.redirect('/?feedback=error');
+        }
+
+        const userEmail = user.username;
+
+        // Email content
+        const mailOptions = {
+            from: `"${user.name || 'Feedback'}" <${process.env.GMAIL_USER}>`,
+            to: process.env.GMAIL_USER,
+            subject: `New Feedback from ${user.name || 'User'}`,
+            html: `
+                <h3>New Feedback Received</h3>
+                <p><strong>User Name:</strong> ${user.name || 'Not provided'}</p>
+                <p><strong>User Email:</strong> ${userEmail}</p>
+                <hr>
+                <p><strong>Message:</strong></p>
+                <p>${message.replace(/\n/g, '<br>')}</p>
+            `
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Feedback email sent from ${userEmail}`);
+        res.redirect('/?feedback=success');
+    } catch (error) {
+        console.error('❌ Error sending feedback email:', error);
+        res.redirect('/?feedback=error');
+    }
+});
+
 // ======================
-// Start Server
+// Error Handling Middleware
 // ======================
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running at http://localhost:${PORT}`));
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  const status = err.status || 500;
+  const message = process.env.NODE_ENV === 'production' 
+    ? 'Something went wrong!' 
+    : err.message;
+  
+  if (req.accepts('json')) {
+    return res.status(status).json({ success: false, message });
+  }
+  
+  res.status(status).render('error', { message });
+});
+
+// 404 Handler
+app.use((req, res) => {
+  if (req.accepts('json')) {
+    return res.status(404).json({ success: false, message: 'Not Found' });
+  }
+  res.status(404).render('404');
+});
+
+// ======================
+// Server Initialization
+// ======================
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});
+
+module.exports = app;

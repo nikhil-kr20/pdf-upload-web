@@ -69,35 +69,65 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function switchAuthTab(which) {
         if (!tabLogin || !tabSignup || !loginForm || !signupForm) return;
+        
+        // Remove active class from both tabs
+        tabLogin.classList.remove('active');
+        tabSignup.classList.remove('active');
+        
+        // Hide both forms
+        loginForm.style.display = 'none';
+        signupForm.style.display = 'none';
+        
+        // Show the selected tab and form
         if (which === 'signup') {
             tabSignup.classList.add('active');
-            tabLogin.classList.remove('active');
-            signupForm.style.display = '';
-            loginForm.style.display = 'none';
+            signupForm.style.display = 'block';
         } else {
             tabLogin.classList.add('active');
-            tabSignup.classList.remove('active');
-            loginForm.style.display = '';
-            signupForm.style.display = 'none';
+            loginForm.style.display = 'block';
+        }
+        
+        // Clear any error messages when switching tabs
+        if (authError) {
+            authError.style.display = 'none';
+            authError.textContent = '';
         }
     }
 
     function openAuth(which) {
         if (!authModal) return;
         authModal.style.display = 'flex';
-        requestAnimationFrame(() => authModal.classList.add('show'));
-        switchAuthTab(which || 'login');
+        document.body.style.overflow = 'hidden'; // Prevent scrolling when modal is open
+        requestAnimationFrame(() => {
+            authModal.classList.add('show');
+            switchAuthTab(which || 'login');
+        });
     }
 
     function closeAuth() {
         if (!authModal) return;
         authModal.classList.remove('show');
+        document.body.style.overflow = ''; // Re-enable scrolling
         setTimeout(() => { authModal.style.display = 'none'; }, 200);
     }
 
+    // Event listeners
     if (btnSignIn) btnSignIn.addEventListener('click', () => openAuth('login'));
     if (btnSignUp) btnSignUp.addEventListener('click', () => openAuth('signup'));
     if (authClose) authClose.addEventListener('click', closeAuth);
+    
+    // Add click handlers for tab switching
+    if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab('login'));
+    if (tabSignup) tabSignup.addEventListener('click', () => switchAuthTab('signup'));
+    
+    // Close modal when clicking outside the content
+    if (authModal) {
+        authModal.addEventListener('click', (e) => {
+            if (e.target === authModal) {
+                closeAuth();
+            }
+        });
+    }
 
     // Handle signup form submission
     if (signupForm) {
@@ -507,6 +537,25 @@ document.addEventListener('DOMContentLoaded', function() {
                 showNotification(`File selected: ${fileName}`, 'success');
             }
         });
+    }
+});
+
+// Check for feedback parameter in URL
+window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    const feedback = params.get('feedback');
+
+    if (feedback) {
+        if (feedback === 'success') {
+            showNotification('Feedback sent successfully!', 'success');
+        } else if (feedback === 'error') {
+            showNotification('Failed to send feedback. Please try again later.', 'error');
+        }
+
+        // Remove feedback param from URL without reloading
+        params.delete('feedback');
+        const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+        window.history.replaceState({}, '', newUrl);
     }
 });
 
