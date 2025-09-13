@@ -308,17 +308,26 @@ app.post('/register', async (req, res) => {
 app.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
-
     if (!username || !password) return res.status(400).send('Username and password are required');
 
     const user = await User.findOne({ username });
-    if (!user) return res.status(401).send('Invalid credentials');
+    if (!user) return res.status(401).send('Invalid username or password');
 
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(401).send('Invalid credentials');
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(401).send('Invalid username or password');
 
-    req.session.user = { id: user._id.toString(), name: user.name, username: user.username };
-    res.send('Login successful');
+    // Store user in session
+    req.session.user = {
+      id: user._id,
+      name: user.name,
+      username: user.username
+    };
+
+    await req.session.save();
+
+    // Handle redirect after login
+    const redirectTo = req.query.redirect || '/';
+    res.redirect(redirectTo);
   } catch (err) {
     console.error('Login error:', err);
     res.status(500).send('Login failed');
