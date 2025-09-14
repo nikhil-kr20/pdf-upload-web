@@ -10,17 +10,7 @@ const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 
 // Nodemailer transporter setup
-const transporter = nodemailer.createTransport({ewjfhonh b  w ObjectId registerHooks
-
-   rg
-    t
-     g
-     e
-      geq
-       e
-        g
-        g  g
-        ge r
+const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
     user: process.env.GMAIL_USER,
@@ -101,7 +91,6 @@ userDB.on('error', (err) => console.error('❌ User DB connection error:', err))
 // Import schemas
 const noteSchema = require('./models/noteSchema');
 const userLoginSchema = require('./models/userlogin');
-const { registerHooks } = require('module');
 
 // Create models using the connections
 const Note = pdfDB.model('Note', noteSchema);
