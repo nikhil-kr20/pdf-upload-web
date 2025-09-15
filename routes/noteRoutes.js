@@ -34,20 +34,17 @@ router.get('/user/:username', asyncHandler(async (req, res) => {
     });
   }
 
+  // If HTML requested, redirect to the canonical public profile route
+  if (req.accepts('html')) {
+    return res.redirect(`/user/${encodeURIComponent(username)}`);
+  }
+
   const notes = await Note.find({
     $or: [
       { 'uploader.username': username },
       { uploaderName: username }
     ]
   }).sort({ uploadedAt: -1 });
-  
-  if (req.accepts('html')) {
-    return res.render('userUploads', { 
-      username,
-      notes,
-      user: req.session.user || null 
-    });
-  }
   
   apiResponse(res, { data: notes });
 }));
