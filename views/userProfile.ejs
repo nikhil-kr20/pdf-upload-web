@@ -7,6 +7,172 @@
     <link rel="stylesheet" href="/style.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            padding: 10px 20px 10px 16px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            margin-bottom: 20px;
+            text-decoration: none;
+        }
+        
+        .back-button:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .back-button i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-button:hover i {
+            transform: translateX(-3px);
+        }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            margin-bottom: 18px;
+            padding: 28px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+            animation: headerEnter 500ms ease-out;
+            position: relative;
+        }
+
+        .profile-header-content {
+            display: flex;
+            align-items: center;
+            flex-grow: 1;
+            justify-content: space-between;
+        }
+
+        .profile-info {
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            flex-grow: 1;
+        }
+
+        .back-button-container {
+            margin-left: auto;
+        }
+
+        .back-button-profile {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            border-radius: 50px;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .back-button-profile:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .back-button-profile i {
+            transition: transform 0.3s ease;
+        }
+        
+        .back-button-profile:hover i {
+            transform: translateX(-3px);
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 140px;
+            height: 140px;
+            flex: 0 0 140px;
+            margin-right: 20px;
+        }
+
+        .avatar-initial {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 4rem;
+            font-weight: 700;
+            box-shadow: 0 4px 20px rgba(79, 70, 229, 0.3);
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .avatar-container:hover .avatar-initial {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(79, 70, 229, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+                padding: 20px;
+            }
+
+            .profile-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .back-button-container {
+                margin: 15px 0 0;
+                width: 100%;
+            }
+
+            .back-button-profile {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .avatar-container {
+                width: 120px;
+                height: 120px;
+                flex: 0 0 120px;
+                margin: 0 auto 15px;
+            }
+            
+            .avatar-initial {
+                font-size: 3.5rem;
+            }
+        }
+        
+        @keyframes spinRing { to { transform: rotate(360deg); } }
+        @keyframes bob { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-4px); } }
+        @keyframes headerEnter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body>
     <nav class="navbar">
@@ -54,53 +220,135 @@
 
     <section style="padding: 120px 0 60px; min-height: 100vh; position: relative; overflow: hidden; background: url('/hero1.png') center/cover no-repeat;">
         <div style="position:absolute; inset:0; background: linear-gradient(180deg, rgba(15,23,42,0.65), rgba(15,23,42,0.35) 30%, rgba(15,23,42,0.65));"></div>
-        <div class="container" style="max-width: 1200px; position: relative; z-index: 1;">
-            <!-- Header -->
-            <div style="display:flex; align-items:center; gap:28px; margin-bottom: 18px; padding: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; backdrop-filter: blur(10px); box-shadow: 0 20px 40px rgba(0,0,0,0.25); animation: headerEnter 500ms ease-out;">
-                <div style="position: relative; width: 160px; height: 160px; flex: 0 0 160px;">
-                    <div style="position:absolute; inset:-6px; border-radius:999px; background: conic-gradient(from 0deg, #60a5fa, #34d399, #f59e0b, #60a5fa); filter: blur(10px); opacity: .6; animation: spinRing 6s linear infinite;"></div>
-                    <div style="position:absolute; inset:0; border-radius:999px; background: linear-gradient(135deg, #1e293b, #111827); border: 2px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#e5e7eb; font-weight:900; font-size: 4rem; text-shadow: 0 4px 16px rgba(0,0,0,0.35); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 12px 30px rgba(2,6,23,0.6); animation: bob 3s ease-in-out infinite;">
-                        <% const initial = (username || '').charAt(0).toUpperCase(); %>
-                        <%= initial || 'U' %>
+        <div class="container" style="max-width: 1200px; position: relative; z-index: 1; padding: 0 20px;">
+            <!-- Header with Glassy Back Button -->
+            <div class="profile-header">
+                <div class="profile-info">
+                    <div class="avatar-container">
+                        <div class="avatar-initial">
+                            <%= (username || 'U').charAt(0).toUpperCase() %>
+                        </div>
+                    </div>
+                    <div style="flex:1;">
+                        <h1 style="color:white; font-size:2.5rem; margin:0 0 8px; text-shadow:0 2px 4px rgba(0,0,0,0.2);"><%= username %></h1>
+                        <p style="color:rgba(255,255,255,0.9); margin:0 0 16px; font-size:1.1rem;">
+                            <i class="fas fa-book" style="margin-right:8px;"></i> 
+                            <%= notes ? notes.length : '0' %> <%= notes && notes.length === 1 ? 'Note' : 'Notes' %> Shared
+                        </p>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <span style="display:inline-flex; align-items:center; background:rgba(255,255,255,0.15); color:white; padding:6px 14px; border-radius:999px; font-size:0.9rem;">
+                                <i class="fas fa-star" style="color:#fbbf24; margin-right:6px;"></i>
+                                <span>Public Notes</span>
+                            </span>
+                        </div>
                     </div>
                 </div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <h1 style="margin:0; font-size:2.75rem; font-weight:900; letter-spacing:-0.02em; background: linear-gradient(135deg, #ffffff, #dbeafe); -webkit-background-clip:text; -webkit-text-fill-color: transparent;">
-                        <%= username %>
-                    </h1>
-                    <p style="margin:0; color:#c7d2fe; font-weight:600; display:flex; align-items:center; gap:8px;">
-                        <span style="display:inline-flex; width:8px; height:8px; background:#10b981; border-radius:999px; box-shadow:0 0 0 3px rgba(16,185,129,0.25);"></span>
-                        Public uploads
-                    </p>
-                    <div style="margin-top:10px; height: 4px; width: 120px; background: linear-gradient(90deg, #60a5fa, #34d399); border-radius: 999px;"></div>
+                <div class="back-button-container">
+                    <a href="javascript:history.back()" class="back-button-profile">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Back to Browse</span>
+                    </a>
                 </div>
             </div>
 
-            <style>
-                @keyframes spinRing { to { transform: rotate(360deg); } }
-                @keyframes bob { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-4px); } }
-                @keyframes headerEnter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-            </style>
-
             <!-- Uploads Grid -->
             <% if (notes && notes.length) { %>
-            <div class="pdf-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px;">
+            <style>
+                .pdf-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+                    gap: 24px;
+                    width: 100%;
+                }
+                .pdf-card {
+                    background: rgba(255, 255, 255, 0.94);
+                    border-radius: 18px;
+                    padding: 16px;
+                    box-shadow: 0 12px 28px rgba(2, 6, 23, 0.18);
+                    border: 1px solid rgba(15, 23, 42, 0.08);
+                    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .pdf-card:hover {
+                    transform: translateY(-4px);
+                    box-shadow: 0 16px 32px rgba(2, 6, 23, 0.25);
+                    border-color: rgba(99, 102, 241, 0.3);
+                }
+                .thumb-wrap {
+                    position: relative;
+                    overflow: hidden;
+                    border-radius: 16px;
+                    margin-bottom: 12px;
+                    background: #0f172a;
+                    aspect-ratio: 4/3;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .thumb-canvas {
+                    display: block;
+                    width: 100%;
+                    height: 100%;
+                    object-fit: contain;
+                }
+                .pdf-card h3 {
+                    margin: 8px 0 6px;
+                    color: #0f172a;
+                    font-weight: 700;
+                    font-size: 1.05rem;
+                    flex-grow: 1;
+                }
+                .pdf-actions {
+                    display: flex;
+                    justify-content: center;
+                    gap: 0.75rem;
+                    margin-top: 10px;
+                }
+                .pdf-actions .btn {
+                    border-radius: 999px;
+                    font-weight: 800;
+                    text-decoration: none;
+                    padding: 8px 16px;
+                    font-size: 0.9rem;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                }
+                .pdf-meta {
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    color: #64748b;
+                    font-size: 0.9rem;
+                    margin-bottom: 12px;
+                }
+                .chip-date {
+                    background: #f1f5f9;
+                    color: #0f172a;
+                    padding: 6px 10px;
+                    border-radius: 999px;
+                    font-size: 0.85rem;
+                }
+            </style>
+            <div class="pdf-grid">
                 <% notes.forEach(function(note){ %>
-                    <div class="pdf-card" style="background:rgba(255,255,255,0.94); border-radius:18px; padding:16px; box-shadow:0 12px 28px rgba(2,6,23,0.18); border:1px solid rgba(15,23,42,0.08); transition:transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;">
-                        <div class="thumb-wrap" style="position:relative; overflow:hidden; border-radius:16px; margin-bottom:12px; background:#0f172a;">
-                            <canvas class="thumb-canvas" data-url="<%= note.fileUrl %>" style="display:block; width:100%; height:auto;"></canvas>
+                    <div class="pdf-card">
+                        <div class="thumb-wrap">
+                            <canvas class="thumb-canvas" data-id="<%= note._id %>"></canvas>
                         </div>
-                        <h3 style="margin:8px 0 6px; color:#0f172a; font-weight:700; font-size:1.05rem;"><%= note.title %></h3>
-                        <div class="pdf-meta" style="display:flex; gap:10px; align-items:center; color:#64748b; font-size:0.9rem;">
-                            <span class="chip chip-date" style="background:#f1f5f9; color:#0f172a; padding:6px 10px; border-radius:999px; font-size:.85rem;">
+                        <h3><%= note.title %></h3>
+                        <div class="pdf-meta">
+                            <span class="chip chip-date">
                                 <i class="fas fa-calendar-alt"></i> <%= new Date(note.uploadedAt).toLocaleDateString() %>
                             </span>
                         </div>
-                        <div class="pdf-actions" style="display:flex; justify-content:center; gap:.75rem; margin-top:10px;">
-                            <a class="btn btn-primary" href="/view/<%= note._id %>" style="border-radius:999px; font-weight:800; text-decoration:none;">
+                        <div class="pdf-actions">
+                            <a class="btn btn-primary" href="/view/<%= note._id %>">
                                 <i class="fas fa-eye"></i> View
                             </a>
-                            <a class="btn btn-secondary" href="/download/<%= note._id %>" style="border-radius:999px; font-weight:800; text-decoration:none;">
+                            <a class="btn btn-secondary" href="/download/<%= note._id %>">
                                 <i class="fas fa-download"></i> Download
                             </a>
                         </div>
@@ -120,12 +368,17 @@
     </section>
 
     <script src="/script.js?v=<%= Date.now() %>"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
     <script>
+        if (window.pdfjsLib) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+        }
         document.addEventListener('DOMContentLoaded', function(){
             const canvases = document.querySelectorAll('.thumb-canvas');
             if (window.pdfjsLib) {
                 canvases.forEach(async (canvas) => {
-                    const url = canvas.dataset.url;
+                    const id = canvas.dataset.id;
+                    const url = `/download/${id}`;
                     try {
                         const res = await fetch(url);
                         if (!res.ok) throw new Error('Fetch failed');
@@ -154,4 +407,3 @@
     </script>
 </body>
 </html>
-

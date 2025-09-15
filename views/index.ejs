@@ -18,23 +18,27 @@
             right: 8px;
             top: 50%;
             transform: translateY(-50%);
-            background: #4f46e5;
+            background: linear-gradient(135deg, #10b981, #059669);
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 4px 12px;
-            font-size: 12px;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
         .btn-send-otp:disabled {
-            background: #cbd5e1;
+            background: #e5e7eb;
+            color: #9ca3af;
             cursor: not-allowed;
         }
         
         .btn-send-otp:not(:disabled):hover {
-            background: #4338ca;
+            transform: translateY(-50%) scale(1.05);
+            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
         }
         
         .otp-section {
@@ -72,23 +76,27 @@
         }
         
         .btn-verify-otp {
-            background: #4f46e5;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
             border: none;
-            border-radius: 4px;
-            padding: 8px 16px;
-            font-size: 14px;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
         
         .btn-verify-otp:disabled {
-            background: #cbd5e1;
+            background: #e5e7eb;
+            color: #9ca3af;
             cursor: not-allowed;
         }
         
         .btn-verify-otp:not(:disabled):hover {
-            background: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
         }
         
         .otp-timer {
@@ -108,20 +116,24 @@
         .btn-resend-otp {
             background: none;
             border: none;
-            color: #4f46e5;
-            cursor: pointer;
+            color: #3b82f6;
+            font-size: 0.85rem;
             font-weight: 500;
-            padding: 4px 8px;
-            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            margin-left: 10px;
         }
         
         .btn-resend-otp:disabled {
-            color: #cbd5e1;
+            color: #9ca3af;
             cursor: not-allowed;
+            text-decoration: none;
         }
         
         .btn-resend-otp:not(:disabled):hover {
-            background: #f1f5f9;
+            color: #2563eb;
+            text-decoration: none;
         }
         
         .otp-status {
@@ -159,6 +171,82 @@
         
         .form-group.invalid .error-message {
             display: block;
+        }
+        
+        /* Auth Modal Buttons */
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 2rem;
+            background: #f3f4f6;
+            border-radius: 12px;
+            padding: 6px;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .auth-tab.active {
+            background: white;
+            color: #3b82f6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .auth-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.5);
+            color: #4b5563;
+        }
+        
+        .auth-form .btn {
+            width: 100%;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .auth-form .btn-primary {
+            background: linear-gradient(135deg, #4f46e5, #4338ca);
+            color: white;
+            box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+        }
+        
+        .auth-form .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.4);
+            background: linear-gradient(135deg, #4338ca, #3730a3);
+        }
+        
+        .auth-form .btn-secondary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+        }
+        
+        .auth-form .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
         }
     </style>
 </head>
@@ -394,8 +482,6 @@
                         <small>Students</small>
                     </div>
                 </div>
-                
-                
             </div>
         </div>
     </section>
@@ -507,7 +593,7 @@
     <style>
         .contact-section {
             padding: 80px 0;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            background: linear-gradient(135deg, #f0f7ff 0%, #e1f0ff 100%);
             min-height: 70vh;
             display: flex;
             align-items: center;
@@ -536,7 +622,7 @@
             left: 0;
             width: 100%;
             height: 8px;
-            background: linear-gradient(90deg, #2e7d32, #4caf50);
+            background: linear-gradient(90deg, #1e40af, #3b82f6);
         }
         
         .contact-header {
@@ -545,112 +631,78 @@
         }
         
         .contact-header h2 {
-            color: #2e7d32;
+            color: #1e40af;
             font-size: 2.2rem;
             margin-bottom: 10px;
             font-weight: 700;
         }
         
         .contact-header p {
-            color: #6c757d;
+            color: #4b5563;
             font-size: 1.05rem;
             line-height: 1.6;
-        }
-        
-        .form-group {
-            margin-bottom: 25px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: #495057;
-        }
-        
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 15px 20px;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: #f8f9fa;
         }
         
         .form-group input:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #4caf50;
-            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
             background: white;
         }
         
-        .form-group textarea {
-            min-height: 150px;
-            resize: vertical;
-        }
-        
-        .form-actions {
-            margin-top: 30px;
-            text-align: center;
-        }
-        
         .btn-send {
-            background: #2e7d32;
+            background: linear-gradient(135deg, #3b82f6, #1e40af);
             color: white;
             border: none;
-            padding: 15px 40px;
+            padding: 12px 30px;
             border-radius: 50px;
             font-size: 1rem;
-            font-weight: 500;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 10px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(46, 125, 50, 0.2);
         }
         
         .btn-send:hover {
-            background: #1b5e20;
+            background: linear-gradient(135deg, #1e40af, #1e3a8a);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.3);
+            box-shadow: 0 8px 20px rgba(30, 64, 175, 0.3);
         }
         
         .login-prompt {
-            background: #e8f5e9;
-            border-left: 4px solid #4caf50;
-            padding: 15px 20px;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin: 20px 0;
-            text-align: left;
+            background: #f0f7ff;
+            border: 1px solid #dbeafe;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 30px;
         }
         
         .login-prompt i {
-            color: #2e7d32;
-            font-size: 1.2rem;
-            flex-shrink: 0;
+            color: #3b82f6;
+            font-size: 2rem;
+            margin-bottom: 10px;
+            display: block;
         }
         
         .login-prompt p {
+            color: #4b5563;
             margin: 0;
-            color: #2e7d32;
         }
         
         .login-link {
-            color: #1b5e20;
+            color: #3b82f6;
             font-weight: 600;
             text-decoration: none;
-            transition: color 0.2s ease;
+            transition: color 0.2s;
         }
         
         .login-link:hover {
-            color: #003300;
+            color: #1e40af;
             text-decoration: underline;
         }
         
@@ -1144,4 +1196,3 @@
     </script>
 </body>
 </html>
-    
