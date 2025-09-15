@@ -428,7 +428,7 @@ app.get('/user/:username', async (req, res) => {
     const notes = await Note.find(query).sort({ uploadedAt: -1 });
 
     const displayName = userDoc ? (userDoc.name || userDoc.username) : username;
-    return res.render('userUploads', { username: displayName, notes, user: req.session.user || null });
+    return res.render('userProfile', { username: displayName, notes, user: req.session.user || null });
   } catch (err) {
     console.error('User uploads error:', err);
     res.status(500).send('Failed to load user uploads');

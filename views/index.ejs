@@ -347,7 +347,7 @@
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
+                    <button id="uploadSubmitBtn" type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1rem;">
                         <span class="btn-icon">📤</span>
                         Upload PDF Notes
                     </button>
@@ -395,15 +395,7 @@
                     </div>
                 </div>
                 
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3>Smart Organization</h3>
-                    <p>AI-powered categorization and search to find exactly what you need instantly.</p>
-                    <div class="feature-stats">
-                        <span>50+</span>
-                        <small>Subjects</small>
-                    </div>
-                </div>
+                
             </div>
         </div>
     </section>
@@ -709,7 +701,7 @@
     window.isLoggedIn = <%= JSON.stringify(!!user) %>;
 </script>
 
-    <script src="/script.js"></script>
+    <script src="/script.js?v=<%= Date.now() %>"></script>
     <script>
         // Additional functions for this page
         function scrollToUpload() {
@@ -722,6 +714,20 @@
         function browseNotes() {
             window.location.href = '/read';
         }
+        // Auto-open auth modal if redirected here with auth query
+        (function(){
+            try {
+                var params = new URLSearchParams(window.location.search);
+                var auth = params.get('auth');
+                if (auth === 'login' || auth === 'signup') {
+                    openAuthModal(auth);
+                    // Clean the URL without reloading
+                    params.delete('auth');
+                    var newUrl = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+                    window.history.replaceState({}, '', newUrl);
+                }
+            } catch (e) {}
+        })();
         // Fallback wiring for auth modal open
         document.addEventListener('DOMContentLoaded', function() {
             var authModal = document.getElementById('authModal');
@@ -843,8 +849,7 @@
                     // Start the OTP timer
                     startOtpTimer();
                     
-                    // Disable email field and send OTP button
-                    emailInput.disabled = true;
+                    // Keep email editable; only guard send button while loading or invalid
                     sendOtpBtn.disabled = true;
                     
                     // Focus on first OTP input
@@ -852,10 +857,15 @@
                         document.getElementById('otp1').focus();
                     }, 100);
                     
-                    showNotification('OTP sent to your email', 'success');
+                    showNotification('OTP sent successfully', 'success');
                 } catch (error) {
                     console.error('Error:', error);
-                    showNotification(error.message || 'Failed to send OTP', 'error');
+                    const msg = (error && error.message) ? error.message : '';
+                    if (/already\s*(registered|exists)/i.test(msg)) {
+                        showNotification('Email already registered', 'error');
+                    } else {
+                        showNotification('Failed to send OTP', 'error');
+                    }
                     sendOtpBtn.disabled = false;
                 } finally {
                     sendOtpBtn.innerHTML = 'Send OTP';
@@ -937,7 +947,7 @@
                     updateOtpTimer();
                     startOtpTimer();
                     
-                    showNotification('New OTP sent to your email', 'success');
+                    showNotification('OTP sent successfully', 'success');
                 } catch (error) {
                     console.error('Error:', error);
                     showNotification(error.message || 'Failed to resend OTP', 'error');
@@ -992,7 +1002,12 @@
                     
                 } catch (error) {
                     console.error('Error:', error);
-                    showNotification(error.message || 'OTP verification failed', 'error');
+                    const msg = (error && error.message) ? error.message : '';
+                    if (/invalid\s*otp/i.test(msg)) {
+                        showNotification('Invalid OTP, please retry', 'error');
+                    } else {
+                        showNotification(msg || 'OTP verification failed', 'error');
+                    }
                     verifyOtpBtn.disabled = false;
                 } finally {
                     verifyOtpBtn.innerHTML = 'Verify OTP';
@@ -1033,24 +1048,20 @@
                         },
                         body: formData
                     });
-                    
-                    const data = await response.json();
-                    
+                    const text = await response.text();
                     if (!response.ok) {
-                        throw new Error(data.message || 'Registration failed');
+                        if (response.status === 409 || /already\s*(exists|registered|in use)/i.test(text)) {
+                            throw new Error('Email already registered');
+                        }
+                        throw new Error(text || 'Registration failed');
                     }
-                    
                     showNotification('Account created successfully!', 'success');
-                    
-                    // Redirect on success
-                    if (data.redirect) {
-                        setTimeout(() => {
-                            window.location.href = data.redirect;
-                        }, 1500);
-                    }
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 1000);
                 } catch (error) {
                     console.error('Error:', error);
-                    showNotification(error.message || 'Registration failed. Please try again.', 'error');
+                    showNotification(error.message === 'Email already registered' ? 'Email already registered' : (error.message || 'Registration failed. Please try again.'), 'error');
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalBtnText;
                 }
@@ -1093,22 +1104,12 @@
             }
             
             function showNotification(message, type = 'info') {
-                const notification = document.createElement('div');
-                notification.className = `notification ${type}`;
-                notification.textContent = message;
-                document.body.appendChild(notification);
-                
-                // Remove any existing notifications
-                const existingNotifications = document.querySelectorAll('.notification');
-                if (existingNotifications.length > 3) { // Keep max 3 notifications
-                    existingNotifications[0].remove();
+                if (typeof window.showNotification === 'function') {
+                    window.showNotification(message, type);
+                } else {
+                    try { console.warn('Global showNotification not found; using alert fallback'); } catch (e) {}
+                    alert(message);
                 }
-                
-                // Auto-remove notification after 3 seconds
-                setTimeout(() => {
-                    notification.style.opacity = '0';
-                    setTimeout(() => notification.remove(), 300);
-                }, 3000);
             }
         });
     </script>
