@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= username %> - Profile</title>
+    <link rel="stylesheet" href="/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo" onclick="window.location.href='/'">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4 19.5C4 18.1193 5.11929 17 6.5 17H20" stroke="black" stroke-width="1.5" fill="white"/>
+                        <path d="M6.5 2H20V22H6.5C5.11929 22 4 20.8807 4 19.5V2C4 0.619288 5.11929 0 6.5 0Z" stroke="black" stroke-width="1.5" fill="white"/>
+                        <path d="M6.5 0H4C2.89543 0 2 0.895431 2 2V19.5C2 20.8807 2.89543 22 4 22H6.5" stroke="black" stroke-width="1.5" fill="none"/>
+                        <line x1="9" y1="6" x2="15" y2="6" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                        <line x1="9" y1="9" x2="15" y2="9" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                        <line x1="9" y1="12" x2="13" y2="12" stroke="black" stroke-width="1" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-primary">Cloud</span>
+                    <span class="logo-secondary">Notes</span>
+                </div>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item"><a href="/" class="nav-link">Home</a></li>
+                <li class="nav-item"><a href="/#upload" class="nav-link">Upload</a></li>
+                <li class="nav-item"><a href="/read" class="nav-link">Browse</a></li>
+                <li class="nav-item"><a href="/#about" class="nav-link">About</a></li>
+            </ul>
+            <div class="nav-auth">
+                <% if (user) { %>
+                <div class="nav-profile">
+                    <a href="/profile" class="profile-link" title="Profile">
+                        <span class="avatar"><%= (user.name || user.username || 'U').charAt(0).toUpperCase() %></span>
+                        <span class="profile-name"><%= user.name || user.username %></span>
+                    </a>
+                    <form action="/logout" method="POST" style="display:inline">
+                        <button type="submit" class="btn-auth btn-signin">Logout</button>
+                    </form>
+                </div>
+                <% } else { %>
+                <button id="btnSignIn" class="btn-auth btn-signin" onclick="window.location.href='/?auth=login'">Sign In</button>
+                <button id="btnSignUp" class="btn-auth btn-signup" onclick="window.location.href='/?auth=signup'">Sign Up</button>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+
+    <section style="padding: 120px 0 60px; min-height: 100vh; position: relative; overflow: hidden; background: url('/hero1.png') center/cover no-repeat;">
+        <div style="position:absolute; inset:0; background: linear-gradient(180deg, rgba(15,23,42,0.65), rgba(15,23,42,0.35) 30%, rgba(15,23,42,0.65));"></div>
+        <div class="container" style="max-width: 1200px; position: relative; z-index: 1;">
+            <!-- Header -->
+            <div style="display:flex; align-items:center; gap:28px; margin-bottom: 18px; padding: 28px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; backdrop-filter: blur(10px); box-shadow: 0 20px 40px rgba(0,0,0,0.25); animation: headerEnter 500ms ease-out;">
+                <div style="position: relative; width: 160px; height: 160px; flex: 0 0 160px;">
+                    <div style="position:absolute; inset:-6px; border-radius:999px; background: conic-gradient(from 0deg, #60a5fa, #34d399, #f59e0b, #60a5fa); filter: blur(10px); opacity: .6; animation: spinRing 6s linear infinite;"></div>
+                    <div style="position:absolute; inset:0; border-radius:999px; background: linear-gradient(135deg, #1e293b, #111827); border: 2px solid rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; color:#e5e7eb; font-weight:900; font-size: 4rem; text-shadow: 0 4px 16px rgba(0,0,0,0.35); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 12px 30px rgba(2,6,23,0.6); animation: bob 3s ease-in-out infinite;">
+                        <% const initial = (username || '').charAt(0).toUpperCase(); %>
+                        <%= initial || 'U' %>
+                    </div>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <h1 style="margin:0; font-size:2.75rem; font-weight:900; letter-spacing:-0.02em; background: linear-gradient(135deg, #ffffff, #dbeafe); -webkit-background-clip:text; -webkit-text-fill-color: transparent;">
+                        <%= username %>
+                    </h1>
+                    <p style="margin:0; color:#c7d2fe; font-weight:600; display:flex; align-items:center; gap:8px;">
+                        <span style="display:inline-flex; width:8px; height:8px; background:#10b981; border-radius:999px; box-shadow:0 0 0 3px rgba(16,185,129,0.25);"></span>
+                        Public uploads
+                    </p>
+                    <div style="margin-top:10px; height: 4px; width: 120px; background: linear-gradient(90deg, #60a5fa, #34d399); border-radius: 999px;"></div>
+                </div>
+            </div>
+
+            <style>
+                @keyframes spinRing { to { transform: rotate(360deg); } }
+                @keyframes bob { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-4px); } }
+                @keyframes headerEnter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+            </style>
+
+            <!-- Uploads Grid -->
+            <% if (notes && notes.length) { %>
+            <div class="pdf-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:24px;">
+                <% notes.forEach(function(note){ %>
+                    <div class="pdf-card" style="background:rgba(255,255,255,0.94); border-radius:18px; padding:16px; box-shadow:0 12px 28px rgba(2,6,23,0.18); border:1px solid rgba(15,23,42,0.08); transition:transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;">
+                        <div class="thumb-wrap" style="position:relative; overflow:hidden; border-radius:16px; margin-bottom:12px; background:#0f172a;">
+                            <canvas class="thumb-canvas" data-url="<%= note.fileUrl %>" style="display:block; width:100%; height:auto;"></canvas>
+                        </div>
+                        <h3 style="margin:8px 0 6px; color:#0f172a; font-weight:700; font-size:1.05rem;"><%= note.title %></h3>
+                        <div class="pdf-meta" style="display:flex; gap:10px; align-items:center; color:#64748b; font-size:0.9rem;">
+                            <span class="chip chip-date" style="background:#f1f5f9; color:#0f172a; padding:6px 10px; border-radius:999px; font-size:.85rem;">
+                                <i class="fas fa-calendar-alt"></i> <%= new Date(note.uploadedAt).toLocaleDateString() %>
+                            </span>
+                        </div>
+                        <div class="pdf-actions" style="display:flex; justify-content:center; gap:.75rem; margin-top:10px;">
+                            <a class="btn btn-primary" href="/view/<%= note._id %>" style="border-radius:999px; font-weight:800; text-decoration:none;">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                            <a class="btn btn-secondary" href="/download/<%= note._id %>" style="border-radius:999px; font-weight:800; text-decoration:none;">
+                                <i class="fas fa-download"></i> Download
+                            </a>
+                        </div>
+                    </div>
+                <% }) %>
+            </div>
+            <% } else { %>
+                <div class="empty-state" style="text-align:center; padding: 3rem 2rem; background:#fff; border-radius:16px; border:1px solid rgba(15,23,42,0.06); box-shadow:0 10px 24px rgba(0,0,0,0.08);">
+                    <div class="empty-icon" style="font-size:3rem; color:#9ca3af; margin-bottom: 1rem;">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h3 style="margin:0 0 .5rem; color:#0f172a;">No uploads yet</n3>
+                    <p style="margin:0; color:#64748b;">This user hasn't uploaded anything public yet.</p>
+                </div>
+            <% } %>
+        </div>
+    </section>
+
+    <script src="/script.js?v=<%= Date.now() %>"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            const canvases = document.querySelectorAll('.thumb-canvas');
+            if (window.pdfjsLib) {
+                canvases.forEach(async (canvas) => {
+                    const url = canvas.dataset.url;
+                    try {
+                        const res = await fetch(url);
+                        if (!res.ok) throw new Error('Fetch failed');
+                        const data = await res.arrayBuffer();
+                        const pdf = await pdfjsLib.getDocument({ data }).promise;
+                        const page = await pdf.getPage(1);
+                        const desiredWidth = 320;
+                        const viewport1x = page.getViewport({ scale: 1 });
+                        const scale = desiredWidth / viewport1x.width;
+                        const viewport = page.getViewport({ scale });
+                        const off = document.createElement('canvas');
+                        off.width = viewport.width;
+                        off.height = viewport.height;
+                        const offCtx = off.getContext('2d');
+                        await page.render({ canvasContext: offCtx, viewport }).promise;
+                        const ctx = canvas.getContext('2d');
+                        canvas.width = viewport.width;
+                        canvas.height = Math.floor(viewport.height / 2);
+                        ctx.drawImage(off, 0, 0, off.width, off.height / 2, 0, 0, canvas.width, canvas.height);
+                    } catch (e) {
+                        canvas.outerHTML = '<div class="thumb-fallback">Preview unavailable</div>';
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+

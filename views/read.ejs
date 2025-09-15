@@ -54,8 +54,8 @@
                         </form>
                     </div>
                 <% } else { %>
-                    <button id="btnSignIn" class="btn-auth btn-signin" onclick="openAuthModal('login')">Sign In</button>
-                    <button id="btnSignUp" class="btn-auth btn-signup" onclick="openAuthModal('signup')">Sign Up</button>
+                    <button id="btnSignIn" class="btn-auth btn-signin" onclick="window.location.href='/?auth=login'">Sign In</button>
+                    <button id="btnSignUp" class="btn-auth btn-signup" onclick="window.location.href='/?auth=signup'">Sign Up</button>
                 <% } %>
             </div>
         </div>
@@ -127,7 +127,7 @@
     </script>
    <script> window.isLoggedIn = <%- JSON.stringify(!!user) %>; </script>
         
-    <script src="/script.js"></script>
+    <script src="/script.js?v=<%= Date.now() %>"></script>
     <script>
         // Modal PDF viewer on this page
         function viewPDF(id) {
