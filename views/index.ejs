@@ -248,6 +248,42 @@
             box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
         }
+        /* Allow auth buttons to shrink inside flex rows */
+        .auth-form .btn { min-width: 0; }
+        /* Ghost button variant for subtle actions */
+        .btn-ghost {
+            background: transparent;
+            color: #1f2937;
+            border: 2px solid rgba(99, 102, 241, 0.25);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+        }
+        .btn-ghost:hover {
+            background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(99,102,241,0.14));
+            border-color: rgba(99, 102, 241, 0.45);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 18px rgba(99, 102, 241, 0.22);
+        }
+        .forgot-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
+            font-size: 0.9rem;
+            padding: 10px 14px;
+            line-height: 1.1;
+            letter-spacing: 0.2px;
+            font-weight: 600;
+            overflow: visible;
+            flex: 0 0 auto;
+        }
+        .forgot-btn .label { overflow: visible; text-overflow: clip; }
+        /* Slightly smaller font for Sign In button only */
+        #loginForm .btn.btn-secondary { font-size: 0.9rem; padding: 12px 20px; }
+        @media (max-width: 480px){
+            .auth-form .btn-secondary { width: 100%; }
+            .forgot-btn { width: 100%; white-space: normal; text-align: center; }
+        }
     </style>
 </head>
 <body>
@@ -364,7 +400,12 @@
                         <label for="login-password">Password</label>
                         <input id="login-password" name="password" type="password" required>
                     </div>
-                    <button type="submit" class="btn btn-secondary" style="width:100%">Sign In</button>
+                    <div class="auth-btn-row">
+                        <button type="submit" class="btn btn-secondary" style="flex:1">Sign In</button>
+                        <button type="button" id="btnForgot" class="btn btn-ghost forgot-btn" style="flex:1">
+                            <span class="label">Forgot Password?</span>
+                        </button>
+                    </div>
                 </form>
                 <form id="signupForm" class="auth-form" style="display:none">
                     <div class="form-group">
@@ -406,6 +447,56 @@
                     <button type="submit" class="btn btn-primary" style="width:100%" id="signupSubmitBtn" disabled>Create Account</button>
                 </form>
                 <div id="authError" class="auth-error" style="display:none"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forgot Password Modal -->
+    <div id="resetModal" class="auth-modal-overlay" style="display:none">
+        <div class="auth-modal" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
+            <button class="auth-close" id="resetClose" aria-label="Close">×</button>
+            <div class="auth-header">
+                <h3 id="resetTitle">Reset your password</h3>
+                <p class="auth-subtitle">We will send a 6-digit code to your email</p>
+            </div>
+            <div class="auth-body">
+                <form id="resetFormEmail" class="auth-form">
+                    <div class="form-group">
+                        <label for="reset-email">Email</label>
+                        <input id="reset-email" type="email" required>
+                    </div>
+                    <button type="submit" id="resetSendBtn" class="btn btn-primary">Send Code</button>
+                </form>
+                <form id="resetFormVerify" class="auth-form" style="display:none">
+                    <div class="form-group">
+                        <label for="reset-otp">Enter 6-digit code</label>
+                        <div class="otp-input-container">
+                            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                            <input type="text" class="otp-input" maxlength="1" inputmode="numeric" pattern="[0-9]">
+                        </div>
+                    </div>
+                    <div class="otp-actions">
+                        <button type="button" id="resetResendBtn" class="btn-resend-otp" disabled>Resend code</button>
+                        <span id="resetTimer" class="otp-timer-text">02:00</span>
+                    </div>
+                    <button type="submit" id="resetVerifyBtn" class="btn btn-secondary" disabled>Verify Code</button>
+                </form>
+                <form id="resetFormPassword" class="auth-form" style="display:none">
+                    <div class="form-group">
+                        <label for="reset-newpass">New Password</label>
+                        <input id="reset-newpass" type="password" minlength="6" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="reset-confirmpass">Confirm Password</label>
+                        <input id="reset-confirmpass" type="password" minlength="6" required>
+                    </div>
+                    <button type="submit" id="resetConfirmBtn" class="btn btn-primary">Update Password</button>
+                </form>
+                <div id="resetStatus" class="otp-status"></div>
             </div>
         </div>
     </div>
@@ -557,6 +648,7 @@
         </div>
     </section>
 
+    <!-- Contact Section -->
     <!-- Contact Section -->
     <section id="contact" class="contact-section">
         <div class="contact-container">
@@ -748,7 +840,7 @@
         </div>
     </footer>
 
-   <script>
+<script>
     // Expose server auth state for optional client checks
     window.isLoggedIn = <%= JSON.stringify(!!user) %>;
 </script>

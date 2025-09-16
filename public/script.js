@@ -66,6 +66,21 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginForm = document.getElementById('loginForm');
     const signupForm = document.getElementById('signupForm');
     const authError = document.getElementById('authError');
+    const btnForgot = document.getElementById('btnForgot');
+    const resetModal = document.getElementById('resetModal');
+    const resetClose = document.getElementById('resetClose');
+    const resetFormEmail = document.getElementById('resetFormEmail');
+    const resetFormVerify = document.getElementById('resetFormVerify');
+    const resetFormPassword = document.getElementById('resetFormPassword');
+    const resetEmailInput = document.getElementById('reset-email');
+    const resetSendBtn = document.getElementById('resetSendBtn');
+    const resetVerifyBtn = document.getElementById('resetVerifyBtn');
+    const resetResendBtn = document.getElementById('resetResendBtn');
+    const resetTimer = document.getElementById('resetTimer');
+    const resetNewPass = document.getElementById('reset-newpass');
+    const resetConfirmPass = document.getElementById('reset-confirmpass');
+    const resetOtpInputs = resetFormVerify ? resetFormVerify.querySelectorAll('.otp-input') : [];
+    let resetTimerInterval; let resetTimeLeft = 120; let resetEmail = '';
 
     function switchAuthTab(which) {
         if (!tabLogin || !tabSignup || !loginForm || !signupForm) return;
@@ -115,6 +130,22 @@ document.addEventListener('DOMContentLoaded', function() {
     if (btnSignIn) btnSignIn.addEventListener('click', () => openAuth('login'));
     if (btnSignUp) btnSignUp.addEventListener('click', () => openAuth('signup'));
     if (authClose) authClose.addEventListener('click', closeAuth);
+    if (btnForgot) btnForgot.addEventListener('click', () => {
+        if (!resetModal) return;
+        document.getElementById('authClose')?.click();
+        resetModal.style.display = 'flex';
+        requestAnimationFrame(() => resetModal.classList.add('show'));
+        resetFormEmail.style.display = '';
+        resetFormVerify.style.display = 'none';
+        resetFormPassword.style.display = 'none';
+        resetEmailInput.value = document.getElementById('login-username')?.value || '';
+        resetEmailInput.focus();
+    });
+    if (resetClose) resetClose.addEventListener('click', () => {
+        resetModal.classList.remove('show');
+        setTimeout(() => { resetModal.style.display = 'none'; }, 200);
+        clearInterval(resetTimerInterval);
+    });
     
     // Add click handlers for tab switching
     if (tabLogin) tabLogin.addEventListener('click', () => switchAuthTab('login'));
@@ -224,6 +255,100 @@ document.addEventListener('DOMContentLoaded', function() {
           .catch(err => {
             if (authError) { authError.textContent = err.message || 'Login failed'; authError.style.display = 'block'; }
           });
+    });
+
+    // Reset: send code
+    if (resetFormEmail) resetFormEmail.addEventListener('submit', async function(e){
+        e.preventDefault();
+        const email = resetEmailInput.value.trim();
+        if (!email) return showNotification('Enter your email', 'warning');
+        resetSendBtn.disabled = true; resetSendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+        try {
+            const r = await fetch('/api/password-reset/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email }) });
+            const d = await r.json(); if (!r.ok) throw new Error(d.message||'Failed');
+            resetEmail = email; resetFormEmail.style.display = 'none'; resetFormVerify.style.display = '';
+            resetResendBtn.disabled = true; resetTimeLeft = 120; updateResetTimer(); resetTimerInterval = setInterval(updateResetTimer, 1000);
+            showNotification('Code sent to your email', 'success');
+        } catch (err) {
+            showNotification(err.message||'Failed to send code', 'error');
+        } finally { resetSendBtn.disabled = false; resetSendBtn.innerHTML = 'Send Code'; }
+    });
+
+    // Reset: OTP input UX and enabling Verify button
+    if (resetOtpInputs && resetOtpInputs.length) {
+        const updateVerifyEnabled = () => {
+            const digits = Array.from(resetOtpInputs).map(i=>i.value).join('');
+            if (resetVerifyBtn) resetVerifyBtn.disabled = digits.length !== 6;
+        };
+        resetOtpInputs.forEach((input, idx) => {
+            input.addEventListener('input', function(){
+                this.value = this.value.replace(/\D/g, '').slice(0,1);
+                if (this.value && idx < resetOtpInputs.length - 1) resetOtpInputs[idx+1].focus();
+                updateVerifyEnabled();
+            });
+            input.addEventListener('keydown', function(e){
+                if (e.key === 'Backspace' && !this.value && idx > 0) resetOtpInputs[idx-1].focus();
+            });
+            input.addEventListener('paste', function(e){
+                e.preventDefault();
+                const data = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+                if (!data) return;
+                data.split('').slice(0, resetOtpInputs.length).forEach((d, i) => { resetOtpInputs[i].value = d; });
+                resetOtpInputs[Math.min(data.length, resetOtpInputs.length)-1].focus();
+                updateVerifyEnabled();
+            });
+        });
+        updateVerifyEnabled();
+    }
+
+    function updateResetTimer(){
+        const m = Math.floor(resetTimeLeft/60); const s = resetTimeLeft%60;
+        if (resetTimer) resetTimer.textContent = `${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        if (resetTimeLeft <= 0){ clearInterval(resetTimerInterval); resetResendBtn.disabled = false; }
+        else resetTimeLeft--;
+    }
+
+    if (resetResendBtn) resetResendBtn.addEventListener('click', async function(){
+        if (!resetEmail) return;
+        resetResendBtn.disabled = true;
+        try {
+            const r = await fetch('/api/password-reset/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: resetEmail }) });
+            const d = await r.json(); if (!r.ok) throw new Error(d.message||'Failed');
+            resetTimeLeft = 120; updateResetTimer(); clearInterval(resetTimerInterval); resetTimerInterval = setInterval(updateResetTimer, 1000);
+            showNotification('Code resent', 'success');
+        } catch (err) { showNotification(err.message||'Failed to resend', 'error'); resetResendBtn.disabled = false; }
+    });
+
+    // Reset: verify code
+    if (resetFormVerify) resetFormVerify.addEventListener('submit', async function(e){
+        e.preventDefault();
+        const digits = Array.from(resetFormVerify.querySelectorAll('.otp-input')).map(i=>i.value).join('');
+        if (digits.length !== 6) return showNotification('Enter 6-digit code', 'warning');
+        resetVerifyBtn.disabled = true; resetVerifyBtn.textContent = 'Verifying...';
+        try {
+            const r = await fetch('/api/password-reset/verify-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: resetEmail, otp: digits }) });
+            const d = await r.json(); if (!r.ok) throw new Error(d.message||'Failed');
+            resetFormVerify.style.display = 'none'; resetFormPassword.style.display = '';
+            showNotification('Code verified. Set a new password.', 'success');
+        } catch (err) { showNotification(err.message||'Verification failed', 'error'); resetVerifyBtn.disabled = false; resetVerifyBtn.textContent = 'Verify Code'; }
+    });
+
+    // Reset: confirm new password
+    if (resetFormPassword) resetFormPassword.addEventListener('submit', async function(e){
+        e.preventDefault();
+        const pass = resetNewPass.value; const confirm = resetConfirmPass.value;
+        if (pass.length < 6) return showNotification('Password must be at least 6 chars', 'warning');
+        if (pass !== confirm) return showNotification('Passwords do not match', 'warning');
+        const otpDigits = Array.from(document.querySelectorAll('#resetFormVerify .otp-input')).map(i=>i.value).join('');
+        const btn = document.getElementById('resetConfirmBtn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        try {
+            const r = await fetch('/api/password-reset/confirm', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email: resetEmail, otp: otpDigits, newPassword: pass }) });
+            const d = await r.json(); if (!r.ok) throw new Error(d.message||'Failed');
+            showNotification('Password updated. Please sign in.', 'success');
+            resetModal.classList.remove('show'); setTimeout(()=>{ resetModal.style.display='none'; },200);
+            openAuth('login');
+            document.getElementById('login-username').value = resetEmail;
+        } catch (err) { showNotification(err.message||'Update failed', 'error'); btn.disabled=false; btn.innerHTML='Update Password'; }
     });
 
     // Navbar auth state now server-rendered; no client swapping

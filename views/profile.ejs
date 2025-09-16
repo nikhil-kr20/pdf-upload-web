@@ -130,6 +130,15 @@
                         </div>
                     </form>
                 </div>
+
+                <div class="card-header" style="color:#b91c1c">Danger Zone</div>
+                <div class="card-body">
+                    <form action="/profile/delete-account" method="POST" onsubmit="return confirm('This will permanently delete your account and uploads. Continue?')">
+                        <div class="btn-row" style="justify-content:flex-start">
+                            <button type="submit" class="btn btn-danger" style="background:#dc2626;color:#fff">Delete Account</button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <div class="card">
