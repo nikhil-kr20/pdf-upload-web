@@ -817,7 +817,25 @@ body {
         font-size: 2rem;
     }
 }
-
+@media (max-width: 600px) {
+    .search-container {
+      display: flex;
+      align-items: center;
+    }
+  
+    
+  
+    #searchClear {
+      margin-left: -55px;   /* thoda gap input aur button me */
+      flex-shrink: 0;     /* button chhota ho jaye, squeeze na ho */
+    }
+    
+    #searchInput {
+        flex: 1;   /* input jitna space bachega le lega */
+      }
+  }
+  
+  
 /* Footer */
 .footer {
     background: #1f2937;
@@ -1237,7 +1255,14 @@ body {
     padding: 0.75rem 1.5rem;
     font-size: 0.9rem;
 }
-
+/* Desktop */
+.logo-primary {
+    padding-left: 30px;
+    height: 43px;
+    font-size: 30px;
+  }
+  
+  
 /* Responsive Design */
 @media (max-width: 768px) {
     .hero {
@@ -1247,7 +1272,10 @@ body {
         background-position: center;
         background-repeat: no-repeat;
     }
-    
+    .hero-container{
+        height: 90vh; /* phone pe height kam */
+        background-position: top center; /* top part focus me */
+      }
     .hero-container {
         grid-template-columns: 1fr;
         text-align: center;
@@ -1275,6 +1303,19 @@ body {
     .logo-text { gap: 3px; }
     .logo-primary, .logo-secondary { font-size: 1.5rem; }
     
+    .logo-icon img {
+        width: 100px;   /* image container ke hisaab se fit hogi */
+        padding-left: 20px;
+      }
+
+      .logo-primary {
+        padding-left: 20px;
+        height: 34px;
+        font-size: 25px;
+      }
+
+      .floating-elements { display: none; }
+      .floating-icons { display: none; }
     .features-grid { grid-template-columns: 1fr; gap: 1.5rem; }
     
     .steps-container { flex-direction: column; gap: 3rem; }
@@ -1287,6 +1328,7 @@ body {
     
     .pdf-grid { grid-template-columns: 1fr; }
     .pdf-actions { flex-direction: column; }
+
 }
 
 @media (max-width: 480px) {
@@ -1302,4 +1344,32 @@ body {
     .auth-btn-row .btn { width: 100%; }
     .nav-container { padding: 0 12px; height: 68px; }
     .auth-modal { max-width: 92vw; }
+
+    .logo-icon img {
+        width: 100px;   /* image container ke hisaab se fit hogi */
+        padding-left: 20px;
+      }
+
+      .logo-primary {
+        padding-left: 20px;
+        height: 34px;
+        font-size: 25px;
+      }
+      @media (max-width: 480px) {
+        .search-container {
+          display: flex;
+          align-items: center;
+        }
+      
+        
+        #searchClear {
+          margin-left: -55px;   /* thoda gap input aur button me */
+          flex-shrink: 0;     /* button chhota ho jaye, squeeze na ho */
+        }
+        #searchInput {
+            flex: 1;   /* input jitna space bachega le lega */
+          }
+        
+      }
+      
 }
