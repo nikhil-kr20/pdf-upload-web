@@ -39,34 +39,19 @@ cloudinary.config({
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+// Ensure GET to delete-account never 404s (placed before static)
+app.get('/profile/delete-account', (req, res) => {
+  return res.redirect(303, '/profile');
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // View Engine
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
-// Session Configuration
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/cloud-notes',
-    collectionName: 'sessions'
-  }),
-  cookie: {
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax'
-  }
-}));
+// Session Configuration is initialized after DB connections
 
-// Expose user to views
-app.use((req, res, next) => {
-  res.locals.user = req.session.user || null;
-  next();
-});
+// Expose user to views (must come AFTER session middleware)
 
 // ======================
 // Database Connections
@@ -97,7 +82,32 @@ const Note = pdfDB.model('Note', noteSchema);
 const User = userDB.model('UserLogin', userLoginSchema);
 
 // In-memory store for OTPs (in production, use Redis or database)
-const otpStore = new Map();
+const otpStore = new Map(); // used for signup
+const resetOtpStore = new Map(); // used for password reset
+
+// Session Configuration (after DB connections so we can reuse the Mongo client)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  store: MongoStore.create({
+    // Prefer using the existing MongoDB client from the User DB connection
+    client: userDB.getClient(),
+    collectionName: 'sessions'
+  }),
+  cookie: {
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax'
+  }
+}));
+
+// Expose user to views
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
 
 // Generate random 6-digit OTP
 function generateOTP() {
@@ -143,6 +153,33 @@ async function sendOTP(email, otp) {
   }
 }
 
+// Send Reset OTP email
+async function sendResetOTP(email, otp) {
+  const mailOptions = {
+    from: `"Cloud Notes" <${process.env.GMAIL_USER}>`,
+    to: email,
+    subject: 'Cloud Notes Password Reset Code',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4f46e5;">Reset Your Password</h2>
+        <p>Your password reset code is:</p>
+        <div style="background: #f3f4f6; padding: 20px; text-align: center; margin: 20px 0;">
+          <span style="font-size: 28px; font-weight: bold; letter-spacing: 5px; color: #111827;">${otp}</span>
+        </div>
+        <p>This code is valid for 5 minutes.</p>
+      </div>
+    `
+  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Reset email sent:', info.messageId);
+    return true;
+  } catch (error) {
+    console.error('Send reset OTP error:', error);
+    return false;
+  }
+}
+
 // Multer Setup - Memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
@@ -184,7 +221,7 @@ app.post('/api/send-otp', async (req, res) => {
     }
 
     // Check if user already exists
-    const userExists = await User.findOne({ email });
+    const userExists = await User.findOne({ username: email });
     if (userExists) {
       console.log('User already exists:', email);
       return res.status(400).json({ success: false, message: 'User already exists' });
@@ -275,6 +312,83 @@ app.post('/api/verify-otp', (req, res) => {
   } catch (error) {
     console.error('Error verifying OTP:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// ======================
+// Password Reset (OTP)
+// ======================
+
+// Send password reset OTP
+app.post('/api/password-reset/send-otp', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+    const user = await User.findOne({ username: email });
+    if (!user) return res.status(404).json({ success: false, message: 'No account found for this email' });
+
+    const otp = generateOTP();
+    resetOtpStore.set(email, {
+      otp,
+      expiresAt: Date.now() + 300000,
+      verified: false
+    });
+
+    const ok = await sendResetOTP(email, otp);
+    if (!ok) return res.status(500).json({ success: false, message: 'Failed to send reset code' });
+    return res.json({ success: true, message: 'Reset code sent' });
+  } catch (err) {
+    console.error('Reset send-otp error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Verify password reset OTP
+app.post('/api/password-reset/verify-otp', (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+
+    const rec = resetOtpStore.get(email);
+    if (!rec) return res.status(400).json({ success: false, message: 'No reset code found. Send a new one.' });
+    if (rec.expiresAt < Date.now()) {
+      resetOtpStore.delete(email);
+      return res.status(400).json({ success: false, message: 'Reset code expired. Send a new one.' });
+    }
+    if (rec.otp !== otp) return res.status(400).json({ success: false, message: 'Invalid reset code' });
+
+    rec.verified = true;
+    resetOtpStore.set(email, rec);
+    return res.json({ success: true, message: 'Code verified' });
+  } catch (err) {
+    console.error('Reset verify-otp error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Confirm password reset
+app.post('/api/password-reset/confirm', async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) return res.status(400).json({ success: false, message: 'Missing fields' });
+
+    const rec = resetOtpStore.get(email);
+    if (!rec || !rec.verified || rec.otp !== otp || rec.expiresAt < Date.now()) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired code' });
+    }
+
+    const user = await User.findOne({ username: email });
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    resetOtpStore.delete(email);
+    return res.json({ success: true, message: 'Password updated' });
+  } catch (err) {
+    console.error('Reset confirm error:', err);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
 
@@ -601,6 +715,31 @@ app.post('/profile/password', async (req, res) => {
     res.status(500).send('Password update failed');
   }
 });
+
+// Delete account
+app.post('/profile/delete-account', async (req, res) => {
+  if (!req.session.user) return res.status(401).send('Unauthorized');
+  try {
+    const userId = req.session.user.id;
+    // Delete user's notes
+    await Note.deleteMany({ uploader: userId });
+    // Delete user
+    await User.findByIdAndDelete(userId);
+    // Destroy session and redirect home
+    req.session.destroy((err) => {
+      if (err) {
+        console.error('Session destroy error:', err);
+      }
+      res.clearCookie('connect.sid');
+      res.redirect(303, '/');
+    });
+  } catch (err) {
+    console.error('Delete account error:', err);
+    res.status(500).send('Failed to delete account');
+  }
+});
+
+// (handled earlier, before static)
 
 // Delete an upload (owned by the logged-in user)
 app.delete('/uploads/:id', requireAuth, async (req, res) => {
