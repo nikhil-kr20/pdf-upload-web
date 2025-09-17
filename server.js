@@ -8,6 +8,7 @@ const { v2: cloudinary } = require('cloudinary');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
+const cors = require('cors');
 
 // 1. CORS Configuration (NEW CODE - ADD THIS)
 const allowedOrigins = [
