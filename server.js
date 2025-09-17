@@ -9,6 +9,41 @@ const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const nodemailer = require('nodemailer');
 
+// 1. CORS Configuration (NEW CODE - ADD THIS)
+const allowedOrigins = [
+  'http://localhost:3000', // Local development
+  'https://cloudnotes-hn.vercel.app', // Your production domain
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      return callback(null, true);
+    } else {
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  credentials: true
+}));
+
+// 2. Session Configuration (YOUR EXISTING CODE)
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  store: yourMongoStore,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    maxAge: 1000 * 60 * 60 * 24
+  }
+}));
+
 // Nodemailer transporter setup
 const transporter = nodemailer.createTransport({
   service: 'gmail',
